@@ -29,15 +29,15 @@ type Gateway interface {
 }
 
 // HTTPGateway implements Gateway using HTTP requests
-type HTTPGateway struct {
+type httpGateway struct {
 	baseURL    string
 	httpClient *http.Client
 	timeout    time.Duration
 }
 
 // NewHTTPGateway creates a new HTTP gateway client
-func NewHTTPGateway(baseURL string, options ...HTTPGatewayOption) *HTTPGateway {
-	gateway := &HTTPGateway{
+func NewHTTPGateway(baseURL string, options ...HTTPGatewayOption) Gateway {
+	gateway := &httpGateway{
 		baseURL:    strings.TrimSuffix(baseURL, "/"),
 		httpClient: &http.Client{},
 		timeout:    30 * time.Second,
@@ -55,11 +55,11 @@ func NewHTTPGateway(baseURL string, options ...HTTPGatewayOption) *HTTPGateway {
 }
 
 // HTTPGatewayOption represents configuration options for HTTPGateway
-type HTTPGatewayOption func(*HTTPGateway)
+type HTTPGatewayOption func(*httpGateway)
 
 // WithTimeout sets the timeout for HTTP requests
 func WithTimeout(timeout time.Duration) HTTPGatewayOption {
-	return func(g *HTTPGateway) {
+	return func(g *httpGateway) {
 		g.timeout = timeout
 		g.httpClient.Timeout = timeout
 	}
@@ -67,44 +67,44 @@ func WithTimeout(timeout time.Duration) HTTPGatewayOption {
 
 // WithHTTPClient sets a custom HTTP client
 func WithHTTPClient(client *http.Client) HTTPGatewayOption {
-	return func(g *HTTPGateway) {
+	return func(g *httpGateway) {
 		g.httpClient = client
 	}
 }
 
 // InferenceRequest represents an inference request
 type InferenceRequest struct {
-	Input                   InferenceInput         `json:"input"`
-	FunctionName            *string                `json:"function_name,omitempty"`
-	ModelName               *string                `json:"model_name,omitempty"`
-	EpisodeID               *uuid.UUID             `json:"episode_id,omitempty"`
-	Stream                  *bool                  `json:"stream,omitempty"`
-	Params                  map[string]interface{} `json:"params,omitempty"`
-	VariantName             *string                `json:"variant_name,omitempty"`
-	Dryrun                  *bool                  `json:"dryrun,omitempty"`
-	OutputSchema            map[string]interface{} `json:"output_schema,omitempty"`
-	AllowedTools            []string               `json:"allowed_tools,omitempty"`
+	Input                   InferenceInput           `json:"input"`
+	FunctionName            *string                  `json:"function_name,omitempty"`
+	ModelName               *string                  `json:"model_name,omitempty"`
+	EpisodeID               *uuid.UUID               `json:"episode_id,omitempty"`
+	Stream                  *bool                    `json:"stream,omitempty"`
+	Params                  map[string]interface{}   `json:"params,omitempty"`
+	VariantName             *string                  `json:"variant_name,omitempty"`
+	Dryrun                  *bool                    `json:"dryrun,omitempty"`
+	OutputSchema            map[string]interface{}   `json:"output_schema,omitempty"`
+	AllowedTools            []string                 `json:"allowed_tools,omitempty"`
 	AdditionalTools         []map[string]interface{} `json:"additional_tools,omitempty"`
-	ToolChoice              ToolChoice             `json:"tool_choice,omitempty"`
-	ParallelToolCalls       *bool                  `json:"parallel_tool_calls,omitempty"`
-	Internal                *bool                  `json:"internal,omitempty"`
-	Tags                    map[string]string      `json:"tags,omitempty"`
-	Credentials             map[string]string      `json:"credentials,omitempty"`
-	CacheOptions            map[string]interface{} `json:"cache_options,omitempty"`
-	ExtraBody               []ExtraBody            `json:"extra_body,omitempty"`
+	ToolChoice              ToolChoice               `json:"tool_choice,omitempty"`
+	ParallelToolCalls       *bool                    `json:"parallel_tool_calls,omitempty"`
+	Internal                *bool                    `json:"internal,omitempty"`
+	Tags                    map[string]string        `json:"tags,omitempty"`
+	Credentials             map[string]string        `json:"credentials,omitempty"`
+	CacheOptions            map[string]interface{}   `json:"cache_options,omitempty"`
+	ExtraBody               []ExtraBody              `json:"extra_body,omitempty"`
 	ExtraHeaders            []map[string]interface{} `json:"extra_headers,omitempty"`
-	IncludeOriginalResponse *bool                  `json:"include_original_response,omitempty"`
+	IncludeOriginalResponse *bool                    `json:"include_original_response,omitempty"`
 }
 
 // FeedbackRequest represents a feedback request
 type FeedbackRequest struct {
-	MetricName   string            `json:"metric_name"`
-	Value        interface{}       `json:"value"`
-	InferenceID  *uuid.UUID        `json:"inference_id,omitempty"`
-	EpisodeID    *uuid.UUID        `json:"episode_id,omitempty"`
-	Dryrun       *bool             `json:"dryrun,omitempty"`
-	Internal     *bool             `json:"internal,omitempty"`
-	Tags         map[string]string `json:"tags,omitempty"`
+	MetricName  string            `json:"metric_name"`
+	Value       interface{}       `json:"value"`
+	InferenceID *uuid.UUID        `json:"inference_id,omitempty"`
+	EpisodeID   *uuid.UUID        `json:"episode_id,omitempty"`
+	Dryrun      *bool             `json:"dryrun,omitempty"`
+	Internal    *bool             `json:"internal,omitempty"`
+	Tags        map[string]string `json:"tags,omitempty"`
 }
 
 // DynamicEvaluationRunRequest represents a dynamic evaluation run request
@@ -152,7 +152,7 @@ type Datapoint struct {
 }
 
 // Inference makes an inference request
-func (g *HTTPGateway) Inference(ctx context.Context, req *InferenceRequest) (InferenceResponse, error) {
+func (g *httpGateway) Inference(ctx context.Context, req *InferenceRequest) (InferenceResponse, error) {
 	reqBody, err := json.Marshal(req)
 	if err != nil {
 		return nil, fmt.Errorf("failed to marshal request: %w", err)
@@ -188,7 +188,7 @@ func (g *HTTPGateway) Inference(ctx context.Context, req *InferenceRequest) (Inf
 }
 
 // InferenceStream makes a streaming inference request
-func (g *HTTPGateway) InferenceStream(ctx context.Context, req *InferenceRequest) (<-chan InferenceChunk, <-chan error) {
+func (g *httpGateway) InferenceStream(ctx context.Context, req *InferenceRequest) (<-chan InferenceChunk, <-chan error) {
 	chunkCh := make(chan InferenceChunk, 10)
 	errCh := make(chan error, 1)
 
@@ -263,7 +263,7 @@ func (g *HTTPGateway) InferenceStream(ctx context.Context, req *InferenceRequest
 }
 
 // Feedback sends feedback
-func (g *HTTPGateway) Feedback(ctx context.Context, req *FeedbackRequest) (*FeedbackResponse, error) {
+func (g *httpGateway) Feedback(ctx context.Context, req *FeedbackRequest) (*FeedbackResponse, error) {
 	reqBody, err := json.Marshal(req)
 	if err != nil {
 		return nil, fmt.Errorf("failed to marshal request: %w", err)
@@ -299,7 +299,7 @@ func (g *HTTPGateway) Feedback(ctx context.Context, req *FeedbackRequest) (*Feed
 }
 
 // DynamicEvaluationRun creates a dynamic evaluation run
-func (g *HTTPGateway) DynamicEvaluationRun(ctx context.Context, req *DynamicEvaluationRunRequest) (*DynamicEvaluationRunResponse, error) {
+func (g *httpGateway) DynamicEvaluationRun(ctx context.Context, req *DynamicEvaluationRunRequest) (*DynamicEvaluationRunResponse, error) {
 	reqBody, err := json.Marshal(req)
 	if err != nil {
 		return nil, fmt.Errorf("failed to marshal request: %w", err)
@@ -335,7 +335,7 @@ func (g *HTTPGateway) DynamicEvaluationRun(ctx context.Context, req *DynamicEval
 }
 
 // DynamicEvaluationRunEpisode creates a dynamic evaluation run episode
-func (g *HTTPGateway) DynamicEvaluationRunEpisode(ctx context.Context, req *DynamicEvaluationRunEpisodeRequest) (*DynamicEvaluationRunEpisodeResponse, error) {
+func (g *httpGateway) DynamicEvaluationRunEpisode(ctx context.Context, req *DynamicEvaluationRunEpisodeRequest) (*DynamicEvaluationRunEpisodeResponse, error) {
 	reqBody, err := json.Marshal(req)
 	if err != nil {
 		return nil, fmt.Errorf("failed to marshal request: %w", err)
@@ -371,7 +371,7 @@ func (g *HTTPGateway) DynamicEvaluationRunEpisode(ctx context.Context, req *Dyna
 }
 
 // BulkInsertDatapoints inserts multiple datapoints
-func (g *HTTPGateway) BulkInsertDatapoints(ctx context.Context, datasetName string, datapoints []DatapointInsert) ([]uuid.UUID, error) {
+func (g *httpGateway) BulkInsertDatapoints(ctx context.Context, datasetName string, datapoints []DatapointInsert) ([]uuid.UUID, error) {
 	reqBody, err := json.Marshal(map[string]interface{}{
 		"datapoints": datapoints,
 	})
@@ -410,7 +410,7 @@ func (g *HTTPGateway) BulkInsertDatapoints(ctx context.Context, datasetName stri
 }
 
 // DeleteDatapoint deletes a datapoint
-func (g *HTTPGateway) DeleteDatapoint(ctx context.Context, datasetName string, datapointID uuid.UUID) error {
+func (g *httpGateway) DeleteDatapoint(ctx context.Context, datasetName string, datapointID uuid.UUID) error {
 	endpoint := fmt.Sprintf("/datasets/%s/datapoints/%s", url.PathEscape(datasetName), datapointID.String())
 	httpReq, err := http.NewRequestWithContext(ctx, "DELETE", g.baseURL+endpoint, nil)
 	if err != nil {
@@ -435,9 +435,9 @@ func (g *HTTPGateway) DeleteDatapoint(ctx context.Context, datasetName string, d
 }
 
 // ListDatapoints lists datapoints
-func (g *HTTPGateway) ListDatapoints(ctx context.Context, req *ListDatapointsRequest) ([]Datapoint, error) {
+func (g *httpGateway) ListDatapoints(ctx context.Context, req *ListDatapointsRequest) ([]Datapoint, error) {
 	endpoint := fmt.Sprintf("/datasets/%s/datapoints", url.PathEscape(req.DatasetName))
-	
+
 	u, err := url.Parse(g.baseURL + endpoint)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse URL: %w", err)
@@ -483,12 +483,13 @@ func (g *HTTPGateway) ListDatapoints(ctx context.Context, req *ListDatapointsReq
 }
 
 // Close closes the gateway
-func (g *HTTPGateway) Close() error {
+func (g *httpGateway) Close() error {
 	// HTTP client doesn't need explicit closing
 	return nil
 }
+
 // ListInferences lists stored inferences with filtering and ordering
-func (g *HTTPGateway) ListInferences(ctx context.Context, req *ListInferencesRequest) ([]StoredInference, error) {
+func (g *httpGateway) ListInferences(ctx context.Context, req *ListInferencesRequest) ([]StoredInference, error) {
 	reqBody, err := json.Marshal(req)
 	if err != nil {
 		return nil, fmt.Errorf("failed to marshal request: %w", err)
