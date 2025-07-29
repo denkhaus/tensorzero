@@ -1,9 +1,8 @@
-package tensorzero
+package types
 
 import (
 	"github.com/google/uuid"
 )
-
 
 // StringPtr returns a pointer to the given string
 func StringPtr(s string) *string {

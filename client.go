@@ -11,20 +11,21 @@ import (
 	"strings"
 	"time"
 
+	"github.com/denkhaus/tensorzero/types"
 	"github.com/google/uuid"
 )
 
 // Gateway represents the base interface for TensorZero gateways
 type Gateway interface {
-	Inference(ctx context.Context, req *InferenceRequest) (InferenceResponse, error)
-	InferenceStream(ctx context.Context, req *InferenceRequest) (<-chan InferenceChunk, <-chan error)
-	Feedback(ctx context.Context, req *FeedbackRequest) (*FeedbackResponse, error)
-	DynamicEvaluationRun(ctx context.Context, req *DynamicEvaluationRunRequest) (*DynamicEvaluationRunResponse, error)
-	DynamicEvaluationRunEpisode(ctx context.Context, req *DynamicEvaluationRunEpisodeRequest) (*DynamicEvaluationRunEpisodeResponse, error)
-	BulkInsertDatapoints(ctx context.Context, datasetName string, datapoints []DatapointInsert) ([]uuid.UUID, error)
+	Inference(ctx context.Context, req *types.InferenceRequest) (types.InferenceResponse, error)
+	InferenceStream(ctx context.Context, req *types.InferenceRequest) (<-chan types.InferenceChunk, <-chan error)
+	Feedback(ctx context.Context, req *types.FeedbackRequest) (*types.FeedbackResponse, error)
+	DynamicEvaluationRun(ctx context.Context, req *types.DynamicEvaluationRunRequest) (*types.DynamicEvaluationRunResponse, error)
+	DynamicEvaluationRunEpisode(ctx context.Context, req *types.DynamicEvaluationRunEpisodeRequest) (*types.DynamicEvaluationRunEpisodeResponse, error)
+	BulkInsertDatapoints(ctx context.Context, datasetName string, datapoints []types.DatapointInsert) ([]uuid.UUID, error)
 	DeleteDatapoint(ctx context.Context, datasetName string, datapointID uuid.UUID) error
-	ListDatapoints(ctx context.Context, req *ListDatapointsRequest) ([]Datapoint, error)
-	ListInferences(ctx context.Context, req *ListInferencesRequest) ([]StoredInference, error)
+	ListDatapoints(ctx context.Context, req *types.ListDatapointsRequest) ([]types.Datapoint, error)
+	ListInferences(ctx context.Context, req *types.ListInferencesRequest) ([]types.StoredInference, error)
 	Close() error
 }
 
@@ -72,87 +73,8 @@ func WithHTTPClient(client *http.Client) HTTPGatewayOption {
 	}
 }
 
-// InferenceRequest represents an inference request
-type InferenceRequest struct {
-	Input                   InferenceInput           `json:"input"`
-	FunctionName            *string                  `json:"function_name,omitempty"`
-	ModelName               *string                  `json:"model_name,omitempty"`
-	EpisodeID               *uuid.UUID               `json:"episode_id,omitempty"`
-	Stream                  *bool                    `json:"stream,omitempty"`
-	Params                  map[string]interface{}   `json:"params,omitempty"`
-	VariantName             *string                  `json:"variant_name,omitempty"`
-	Dryrun                  *bool                    `json:"dryrun,omitempty"`
-	OutputSchema            map[string]interface{}   `json:"output_schema,omitempty"`
-	AllowedTools            []string                 `json:"allowed_tools,omitempty"`
-	AdditionalTools         []map[string]interface{} `json:"additional_tools,omitempty"`
-	ToolChoice              ToolChoice               `json:"tool_choice,omitempty"`
-	ParallelToolCalls       *bool                    `json:"parallel_tool_calls,omitempty"`
-	Internal                *bool                    `json:"internal,omitempty"`
-	Tags                    map[string]string        `json:"tags,omitempty"`
-	Credentials             map[string]string        `json:"credentials,omitempty"`
-	CacheOptions            map[string]interface{}   `json:"cache_options,omitempty"`
-	ExtraBody               []ExtraBody              `json:"extra_body,omitempty"`
-	ExtraHeaders            []map[string]interface{} `json:"extra_headers,omitempty"`
-	IncludeOriginalResponse *bool                    `json:"include_original_response,omitempty"`
-}
-
-// FeedbackRequest represents a feedback request
-type FeedbackRequest struct {
-	MetricName  string            `json:"metric_name"`
-	Value       interface{}       `json:"value"`
-	InferenceID *uuid.UUID        `json:"inference_id,omitempty"`
-	EpisodeID   *uuid.UUID        `json:"episode_id,omitempty"`
-	Dryrun      *bool             `json:"dryrun,omitempty"`
-	Internal    *bool             `json:"internal,omitempty"`
-	Tags        map[string]string `json:"tags,omitempty"`
-}
-
-// DynamicEvaluationRunRequest represents a dynamic evaluation run request
-type DynamicEvaluationRunRequest struct {
-	Variants    map[string]string `json:"variants"`
-	Tags        map[string]string `json:"tags,omitempty"`
-	ProjectName *string           `json:"project_name,omitempty"`
-	DisplayName *string           `json:"display_name,omitempty"`
-}
-
-// DynamicEvaluationRunEpisodeRequest represents a dynamic evaluation run episode request
-type DynamicEvaluationRunEpisodeRequest struct {
-	RunID         uuid.UUID         `json:"run_id"`
-	TaskName      *string           `json:"task_name,omitempty"`
-	DatapointName *string           `json:"datapoint_name,omitempty"`
-	Tags          map[string]string `json:"tags,omitempty"`
-}
-
-// ListDatapointsRequest represents a list datapoints request
-type ListDatapointsRequest struct {
-	DatasetName  string  `json:"dataset_name"`
-	FunctionName *string `json:"function_name,omitempty"`
-	Limit        *int    `json:"limit,omitempty"`
-	Offset       *int    `json:"offset,omitempty"`
-}
-
-// DatapointInsert represents a datapoint for insertion
-type DatapointInsert interface {
-	GetFunctionName() string
-}
-
-func (c *ChatDatapointInsert) GetFunctionName() string { return c.FunctionName }
-func (j *JsonDatapointInsert) GetFunctionName() string { return j.FunctionName }
-
-// Datapoint represents a datapoint
-type Datapoint struct {
-	ID           uuid.UUID      `json:"id"`
-	Input        InferenceInput `json:"input"`
-	Output       interface{}    `json:"output"`
-	DatasetName  string         `json:"dataset_name"`
-	FunctionName string         `json:"function_name"`
-	ToolParams   *ToolParams    `json:"tool_params,omitempty"`
-	OutputSchema interface{}    `json:"output_schema,omitempty"`
-	IsCustom     bool           `json:"is_custom"`
-}
-
 // Inference makes an inference request
-func (g *httpGateway) Inference(ctx context.Context, req *InferenceRequest) (InferenceResponse, error) {
+func (g *httpGateway) Inference(ctx context.Context, req *types.InferenceRequest) (types.InferenceResponse, error) {
 	reqBody, err := json.Marshal(req)
 	if err != nil {
 		return nil, fmt.Errorf("failed to marshal request: %w", err)
@@ -173,7 +95,7 @@ func (g *httpGateway) Inference(ctx context.Context, req *InferenceRequest) (Inf
 
 	if resp.StatusCode != http.StatusOK {
 		body, _ := io.ReadAll(resp.Body)
-		return nil, &TensorZeroError{
+		return nil, &types.TensorZeroError{
 			StatusCode: resp.StatusCode,
 			Text:       string(body),
 		}
@@ -188,8 +110,8 @@ func (g *httpGateway) Inference(ctx context.Context, req *InferenceRequest) (Inf
 }
 
 // InferenceStream makes a streaming inference request
-func (g *httpGateway) InferenceStream(ctx context.Context, req *InferenceRequest) (<-chan InferenceChunk, <-chan error) {
-	chunkCh := make(chan InferenceChunk, 10)
+func (g *httpGateway) InferenceStream(ctx context.Context, req *types.InferenceRequest) (<-chan types.InferenceChunk, <-chan error) {
+	chunkCh := make(chan types.InferenceChunk, 10)
 	errCh := make(chan error, 1)
 
 	go func() {
@@ -225,7 +147,7 @@ func (g *httpGateway) InferenceStream(ctx context.Context, req *InferenceRequest
 
 		if resp.StatusCode != http.StatusOK {
 			body, _ := io.ReadAll(resp.Body)
-			errCh <- &TensorZeroError{
+			errCh <- &types.TensorZeroError{
 				StatusCode: resp.StatusCode,
 				Text:       string(body),
 			}
@@ -263,7 +185,7 @@ func (g *httpGateway) InferenceStream(ctx context.Context, req *InferenceRequest
 }
 
 // Feedback sends feedback
-func (g *httpGateway) Feedback(ctx context.Context, req *FeedbackRequest) (*FeedbackResponse, error) {
+func (g *httpGateway) Feedback(ctx context.Context, req *types.FeedbackRequest) (*types.FeedbackResponse, error) {
 	reqBody, err := json.Marshal(req)
 	if err != nil {
 		return nil, fmt.Errorf("failed to marshal request: %w", err)
@@ -284,13 +206,13 @@ func (g *httpGateway) Feedback(ctx context.Context, req *FeedbackRequest) (*Feed
 
 	if resp.StatusCode != http.StatusOK {
 		body, _ := io.ReadAll(resp.Body)
-		return nil, &TensorZeroError{
+		return nil, &types.TensorZeroError{
 			StatusCode: resp.StatusCode,
 			Text:       string(body),
 		}
 	}
 
-	var feedbackResp FeedbackResponse
+	var feedbackResp types.FeedbackResponse
 	if err := json.NewDecoder(resp.Body).Decode(&feedbackResp); err != nil {
 		return nil, fmt.Errorf("failed to decode response: %w", err)
 	}
@@ -299,7 +221,7 @@ func (g *httpGateway) Feedback(ctx context.Context, req *FeedbackRequest) (*Feed
 }
 
 // DynamicEvaluationRun creates a dynamic evaluation run
-func (g *httpGateway) DynamicEvaluationRun(ctx context.Context, req *DynamicEvaluationRunRequest) (*DynamicEvaluationRunResponse, error) {
+func (g *httpGateway) DynamicEvaluationRun(ctx context.Context, req *types.DynamicEvaluationRunRequest) (*types.DynamicEvaluationRunResponse, error) {
 	reqBody, err := json.Marshal(req)
 	if err != nil {
 		return nil, fmt.Errorf("failed to marshal request: %w", err)
@@ -320,13 +242,13 @@ func (g *httpGateway) DynamicEvaluationRun(ctx context.Context, req *DynamicEval
 
 	if resp.StatusCode != http.StatusOK {
 		body, _ := io.ReadAll(resp.Body)
-		return nil, &TensorZeroError{
+		return nil, &types.TensorZeroError{
 			StatusCode: resp.StatusCode,
 			Text:       string(body),
 		}
 	}
 
-	var evalResp DynamicEvaluationRunResponse
+	var evalResp types.DynamicEvaluationRunResponse
 	if err := json.NewDecoder(resp.Body).Decode(&evalResp); err != nil {
 		return nil, fmt.Errorf("failed to decode response: %w", err)
 	}
@@ -335,7 +257,7 @@ func (g *httpGateway) DynamicEvaluationRun(ctx context.Context, req *DynamicEval
 }
 
 // DynamicEvaluationRunEpisode creates a dynamic evaluation run episode
-func (g *httpGateway) DynamicEvaluationRunEpisode(ctx context.Context, req *DynamicEvaluationRunEpisodeRequest) (*DynamicEvaluationRunEpisodeResponse, error) {
+func (g *httpGateway) DynamicEvaluationRunEpisode(ctx context.Context, req *types.DynamicEvaluationRunEpisodeRequest) (*types.DynamicEvaluationRunEpisodeResponse, error) {
 	reqBody, err := json.Marshal(req)
 	if err != nil {
 		return nil, fmt.Errorf("failed to marshal request: %w", err)
@@ -356,13 +278,13 @@ func (g *httpGateway) DynamicEvaluationRunEpisode(ctx context.Context, req *Dyna
 
 	if resp.StatusCode != http.StatusOK {
 		body, _ := io.ReadAll(resp.Body)
-		return nil, &TensorZeroError{
+		return nil, &types.TensorZeroError{
 			StatusCode: resp.StatusCode,
 			Text:       string(body),
 		}
 	}
 
-	var episodeResp DynamicEvaluationRunEpisodeResponse
+	var episodeResp types.DynamicEvaluationRunEpisodeResponse
 	if err := json.NewDecoder(resp.Body).Decode(&episodeResp); err != nil {
 		return nil, fmt.Errorf("failed to decode response: %w", err)
 	}
@@ -371,7 +293,7 @@ func (g *httpGateway) DynamicEvaluationRunEpisode(ctx context.Context, req *Dyna
 }
 
 // BulkInsertDatapoints inserts multiple datapoints
-func (g *httpGateway) BulkInsertDatapoints(ctx context.Context, datasetName string, datapoints []DatapointInsert) ([]uuid.UUID, error) {
+func (g *httpGateway) BulkInsertDatapoints(ctx context.Context, datasetName string, datapoints []types.DatapointInsert) ([]uuid.UUID, error) {
 	reqBody, err := json.Marshal(map[string]interface{}{
 		"datapoints": datapoints,
 	})
@@ -395,7 +317,7 @@ func (g *httpGateway) BulkInsertDatapoints(ctx context.Context, datasetName stri
 
 	if resp.StatusCode != http.StatusOK {
 		body, _ := io.ReadAll(resp.Body)
-		return nil, &TensorZeroError{
+		return nil, &types.TensorZeroError{
 			StatusCode: resp.StatusCode,
 			Text:       string(body),
 		}
@@ -425,7 +347,7 @@ func (g *httpGateway) DeleteDatapoint(ctx context.Context, datasetName string, d
 
 	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusNoContent {
 		body, _ := io.ReadAll(resp.Body)
-		return &TensorZeroError{
+		return &types.TensorZeroError{
 			StatusCode: resp.StatusCode,
 			Text:       string(body),
 		}
@@ -435,7 +357,7 @@ func (g *httpGateway) DeleteDatapoint(ctx context.Context, datasetName string, d
 }
 
 // ListDatapoints lists datapoints
-func (g *httpGateway) ListDatapoints(ctx context.Context, req *ListDatapointsRequest) ([]Datapoint, error) {
+func (g *httpGateway) ListDatapoints(ctx context.Context, req *types.ListDatapointsRequest) ([]types.Datapoint, error) {
 	endpoint := fmt.Sprintf("/datasets/%s/datapoints", url.PathEscape(req.DatasetName))
 
 	u, err := url.Parse(g.baseURL + endpoint)
@@ -468,13 +390,13 @@ func (g *httpGateway) ListDatapoints(ctx context.Context, req *ListDatapointsReq
 
 	if resp.StatusCode != http.StatusOK {
 		body, _ := io.ReadAll(resp.Body)
-		return nil, &TensorZeroError{
+		return nil, &types.TensorZeroError{
 			StatusCode: resp.StatusCode,
 			Text:       string(body),
 		}
 	}
 
-	var datapoints []Datapoint
+	var datapoints []types.Datapoint
 	if err := json.NewDecoder(resp.Body).Decode(&datapoints); err != nil {
 		return nil, fmt.Errorf("failed to decode response: %w", err)
 	}
@@ -489,7 +411,7 @@ func (g *httpGateway) Close() error {
 }
 
 // ListInferences lists stored inferences with filtering and ordering
-func (g *httpGateway) ListInferences(ctx context.Context, req *ListInferencesRequest) ([]StoredInference, error) {
+func (g *httpGateway) ListInferences(ctx context.Context, req *types.ListInferencesRequest) ([]types.StoredInference, error) {
 	reqBody, err := json.Marshal(req)
 	if err != nil {
 		return nil, fmt.Errorf("failed to marshal request: %w", err)
@@ -510,13 +432,13 @@ func (g *httpGateway) ListInferences(ctx context.Context, req *ListInferencesReq
 
 	if resp.StatusCode != http.StatusOK {
 		body, _ := io.ReadAll(resp.Body)
-		return nil, &TensorZeroError{
+		return nil, &types.TensorZeroError{
 			StatusCode: resp.StatusCode,
 			Text:       string(body),
 		}
 	}
 
-	var inferences []StoredInference
+	var inferences []types.StoredInference
 	if err := json.NewDecoder(resp.Body).Decode(&inferences); err != nil {
 		return nil, fmt.Errorf("failed to decode response: %w", err)
 	}

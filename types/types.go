@@ -1,4 +1,4 @@
-package tensorzero
+package types
 
 import (
 	"fmt"
@@ -308,9 +308,9 @@ func (tr *ToolResult) ToMap() map[string]interface{} {
 
 // UnknownContentBlock represents unknown content
 type UnknownContentBlock struct {
-	Data                interface{} `json:"data"`
-	ModelProviderName   *string     `json:"model_provider_name,omitempty"`
-	Type                string      `json:"type"`
+	Data              interface{} `json:"data"`
+	ModelProviderName *string     `json:"model_provider_name,omitempty"`
+	Type              string      `json:"type"`
 }
 
 func NewUnknownContentBlock(data interface{}) *UnknownContentBlock {
@@ -337,7 +337,7 @@ func (ucb *UnknownContentBlock) ToMap() map[string]interface{} {
 
 // Message represents a message in a conversation
 type Message struct {
-	Role    string        `json:"role"` // "user" or "assistant"
+	Role    string         `json:"role"` // "user" or "assistant"
 	Content []ContentBlock `json:"content"`
 }
 
@@ -358,24 +358,24 @@ type JsonInferenceOutput struct {
 
 // ChatInferenceResponse represents a chat inference response
 type ChatInferenceResponse struct {
-	InferenceID      uuid.UUID     `json:"inference_id"`
-	EpisodeID        uuid.UUID     `json:"episode_id"`
-	VariantName      string        `json:"variant_name"`
+	InferenceID      uuid.UUID      `json:"inference_id"`
+	EpisodeID        uuid.UUID      `json:"episode_id"`
+	VariantName      string         `json:"variant_name"`
 	Content          []ContentBlock `json:"content"`
-	Usage            Usage         `json:"usage"`
-	FinishReason     *FinishReason `json:"finish_reason,omitempty"`
-	OriginalResponse *string       `json:"original_response,omitempty"`
+	Usage            Usage          `json:"usage"`
+	FinishReason     *FinishReason  `json:"finish_reason,omitempty"`
+	OriginalResponse *string        `json:"original_response,omitempty"`
 }
 
 // JsonInferenceResponse represents a JSON inference response
 type JsonInferenceResponse struct {
-	InferenceID      uuid.UUID            `json:"inference_id"`
-	EpisodeID        uuid.UUID            `json:"episode_id"`
-	VariantName      string               `json:"variant_name"`
-	Output           JsonInferenceOutput  `json:"output"`
-	Usage            Usage                `json:"usage"`
-	FinishReason     *FinishReason        `json:"finish_reason,omitempty"`
-	OriginalResponse *string              `json:"original_response,omitempty"`
+	InferenceID      uuid.UUID           `json:"inference_id"`
+	EpisodeID        uuid.UUID           `json:"episode_id"`
+	VariantName      string              `json:"variant_name"`
+	Output           JsonInferenceOutput `json:"output"`
+	Usage            Usage               `json:"usage"`
+	FinishReason     *FinishReason       `json:"finish_reason,omitempty"`
+	OriginalResponse *string             `json:"original_response,omitempty"`
 }
 
 // InferenceResponse represents either chat or JSON inference response
@@ -388,19 +388,19 @@ type InferenceResponse interface {
 	GetOriginalResponse() *string
 }
 
-func (c *ChatInferenceResponse) GetInferenceID() uuid.UUID    { return c.InferenceID }
-func (c *ChatInferenceResponse) GetEpisodeID() uuid.UUID      { return c.EpisodeID }
-func (c *ChatInferenceResponse) GetVariantName() string       { return c.VariantName }
-func (c *ChatInferenceResponse) GetUsage() Usage              { return c.Usage }
+func (c *ChatInferenceResponse) GetInferenceID() uuid.UUID      { return c.InferenceID }
+func (c *ChatInferenceResponse) GetEpisodeID() uuid.UUID        { return c.EpisodeID }
+func (c *ChatInferenceResponse) GetVariantName() string         { return c.VariantName }
+func (c *ChatInferenceResponse) GetUsage() Usage                { return c.Usage }
 func (c *ChatInferenceResponse) GetFinishReason() *FinishReason { return c.FinishReason }
-func (c *ChatInferenceResponse) GetOriginalResponse() *string { return c.OriginalResponse }
+func (c *ChatInferenceResponse) GetOriginalResponse() *string   { return c.OriginalResponse }
 
-func (j *JsonInferenceResponse) GetInferenceID() uuid.UUID    { return j.InferenceID }
-func (j *JsonInferenceResponse) GetEpisodeID() uuid.UUID      { return j.EpisodeID }
-func (j *JsonInferenceResponse) GetVariantName() string       { return j.VariantName }
-func (j *JsonInferenceResponse) GetUsage() Usage              { return j.Usage }
+func (j *JsonInferenceResponse) GetInferenceID() uuid.UUID      { return j.InferenceID }
+func (j *JsonInferenceResponse) GetEpisodeID() uuid.UUID        { return j.EpisodeID }
+func (j *JsonInferenceResponse) GetVariantName() string         { return j.VariantName }
+func (j *JsonInferenceResponse) GetUsage() Usage                { return j.Usage }
 func (j *JsonInferenceResponse) GetFinishReason() *FinishReason { return j.FinishReason }
-func (j *JsonInferenceResponse) GetOriginalResponse() *string { return j.OriginalResponse }
+func (j *JsonInferenceResponse) GetOriginalResponse() *string   { return j.OriginalResponse }
 
 // ContentBlockChunk represents streaming content chunks
 type ContentBlockChunk interface {
@@ -442,12 +442,12 @@ func (tc *ThoughtChunk) GetID() string   { return tc.ID }
 
 // ChatChunk represents streaming chat chunk
 type ChatChunk struct {
-	InferenceID  uuid.UUID            `json:"inference_id"`
-	EpisodeID    uuid.UUID            `json:"episode_id"`
-	VariantName  string               `json:"variant_name"`
-	Content      []ContentBlockChunk  `json:"content"`
-	Usage        *Usage               `json:"usage,omitempty"`
-	FinishReason *FinishReason        `json:"finish_reason,omitempty"`
+	InferenceID  uuid.UUID           `json:"inference_id"`
+	EpisodeID    uuid.UUID           `json:"episode_id"`
+	VariantName  string              `json:"variant_name"`
+	Content      []ContentBlockChunk `json:"content"`
+	Usage        *Usage              `json:"usage,omitempty"`
+	FinishReason *FinishReason       `json:"finish_reason,omitempty"`
 }
 
 // JsonChunk represents streaming JSON chunk
@@ -503,9 +503,9 @@ type ToolChoice interface{}
 
 // ToolParams represents tool parameters
 type ToolParams struct {
-	ToolsAvailable    []Tool       `json:"tools_available"`
-	ToolChoice        string       `json:"tool_choice"`
-	ParallelToolCalls *bool        `json:"parallel_tool_calls,omitempty"`
+	ToolsAvailable    []Tool `json:"tools_available"`
+	ToolChoice        string `json:"tool_choice"`
+	ParallelToolCalls *bool  `json:"parallel_tool_calls,omitempty"`
 }
 
 // ExtraBody represents extra body content for requests
@@ -529,15 +529,17 @@ type ProviderExtraBody struct {
 
 // ChatDatapointInsert represents chat datapoint insertion
 type ChatDatapointInsert struct {
-	FunctionName      string                 `json:"function_name"`
-	Input             InferenceInput         `json:"input"`
-	Output            interface{}            `json:"output,omitempty"`
-	AllowedTools      []string               `json:"allowed_tools,omitempty"`
-	AdditionalTools   []interface{}          `json:"additional_tools,omitempty"`
-	ToolChoice        *string                `json:"tool_choice,omitempty"`
-	ParallelToolCalls *bool                  `json:"parallel_tool_calls,omitempty"`
-	Tags              map[string]string      `json:"tags,omitempty"`
+	FunctionName      string            `json:"function_name"`
+	Input             InferenceInput    `json:"input"`
+	Output            interface{}       `json:"output,omitempty"`
+	AllowedTools      []string          `json:"allowed_tools,omitempty"`
+	AdditionalTools   []interface{}     `json:"additional_tools,omitempty"`
+	ToolChoice        *string           `json:"tool_choice,omitempty"`
+	ParallelToolCalls *bool             `json:"parallel_tool_calls,omitempty"`
+	Tags              map[string]string `json:"tags,omitempty"`
 }
+
+func (c *ChatDatapointInsert) GetFunctionName() string { return c.FunctionName }
 
 // JsonDatapointInsert represents JSON datapoint insertion
 type JsonDatapointInsert struct {
@@ -547,6 +549,8 @@ type JsonDatapointInsert struct {
 	OutputSchema interface{}       `json:"output_schema,omitempty"`
 	Tags         map[string]string `json:"tags,omitempty"`
 }
+
+func (j *JsonDatapointInsert) GetFunctionName() string { return j.FunctionName }
 
 // TensorZeroError represents an error from TensorZero
 type TensorZeroError struct {
@@ -566,6 +570,7 @@ type TensorZeroInternalError struct {
 func (e *TensorZeroInternalError) Error() string {
 	return e.Message
 }
+
 // ============================================================================
 // List Inferences API Types (matching Python SDK)
 // ============================================================================
@@ -635,7 +640,7 @@ func NewTagFilter(key, value, operator string) *TagFilter {
 
 // TimeFilter filters inferences by timestamp
 type TimeFilter struct {
-	Time               string `json:"time"` // RFC 3339 timestamp
+	Time               string `json:"time"`                // RFC 3339 timestamp
 	ComparisonOperator string `json:"comparison_operator"` // "<", "<=", "=", ">", ">=", "!="
 	Type               string `json:"type"`
 }
@@ -701,9 +706,9 @@ func NewNotFilter(child InferenceFilterTreeNode) *NotFilter {
 
 // OrderBy specifies ordering for list inferences
 type OrderBy struct {
-	By        string  `json:"by"`        // "timestamp" or "metric"
+	By        string  `json:"by"`             // "timestamp" or "metric"
 	Name      *string `json:"name,omitempty"` // metric name if by="metric"
-	Direction string  `json:"direction"` // "ASC" or "DESC"
+	Direction string  `json:"direction"`      // "ASC" or "DESC"
 }
 
 // NewOrderByTimestamp creates ordering by timestamp
@@ -725,26 +730,102 @@ func NewOrderByMetric(metricName, direction string) *OrderBy {
 
 // ListInferencesRequest represents a request to list inferences
 type ListInferencesRequest struct {
-	FunctionName *string                   `json:"function_name,omitempty"`
-	EpisodeID    *uuid.UUID                `json:"episode_id,omitempty"`
-	VariantName  *string                   `json:"variant_name,omitempty"`
-	Filter       InferenceFilterTreeNode   `json:"filter,omitempty"`
-	OrderBy      *OrderBy                  `json:"order_by,omitempty"`
-	Limit        *int                      `json:"limit,omitempty"`
-	Offset       *int                      `json:"offset,omitempty"`
+	FunctionName *string                 `json:"function_name,omitempty"`
+	EpisodeID    *uuid.UUID              `json:"episode_id,omitempty"`
+	VariantName  *string                 `json:"variant_name,omitempty"`
+	Filter       InferenceFilterTreeNode `json:"filter,omitempty"`
+	OrderBy      *OrderBy                `json:"order_by,omitempty"`
+	Limit        *int                    `json:"limit,omitempty"`
+	Offset       *int                    `json:"offset,omitempty"`
 }
 
 // StoredInference represents a stored inference from the list API
 type StoredInference struct {
-	ID              uuid.UUID              `json:"id"`
-	EpisodeID       uuid.UUID              `json:"episode_id"`
-	FunctionName    string                 `json:"function_name"`
-	VariantName     string                 `json:"variant_name"`
-	Input           InferenceInput         `json:"input"`
-	Output          interface{}            `json:"output"`
-	ToolParams      *ToolParams            `json:"tool_params,omitempty"`
-	ProcessingTime  *float64               `json:"processing_time,omitempty"`
-	Timestamp       string                 `json:"timestamp"` // RFC 3339
-	Tags            map[string]string      `json:"tags,omitempty"`
-	MetricValues    map[string]interface{} `json:"metric_values,omitempty"`
+	ID             uuid.UUID              `json:"id"`
+	EpisodeID      uuid.UUID              `json:"episode_id"`
+	FunctionName   string                 `json:"function_name"`
+	VariantName    string                 `json:"variant_name"`
+	Input          InferenceInput         `json:"input"`
+	Output         interface{}            `json:"output"`
+	ToolParams     *ToolParams            `json:"tool_params,omitempty"`
+	ProcessingTime *float64               `json:"processing_time,omitempty"`
+	Timestamp      string                 `json:"timestamp"` // RFC 3339
+	Tags           map[string]string      `json:"tags,omitempty"`
+	MetricValues   map[string]interface{} `json:"metric_values,omitempty"`
+}
+
+// InferenceRequest represents an inference request
+type InferenceRequest struct {
+	Input                   InferenceInput           `json:"input"`
+	FunctionName            *string                  `json:"function_name,omitempty"`
+	ModelName               *string                  `json:"model_name,omitempty"`
+	EpisodeID               *uuid.UUID               `json:"episode_id,omitempty"`
+	Stream                  *bool                    `json:"stream,omitempty"`
+	Params                  map[string]interface{}   `json:"params,omitempty"`
+	VariantName             *string                  `json:"variant_name,omitempty"`
+	Dryrun                  *bool                    `json:"dryrun,omitempty"`
+	OutputSchema            map[string]interface{}   `json:"output_schema,omitempty"`
+	AllowedTools            []string                 `json:"allowed_tools,omitempty"`
+	AdditionalTools         []map[string]interface{} `json:"additional_tools,omitempty"`
+	ToolChoice              ToolChoice               `json:"tool_choice,omitempty"`
+	ParallelToolCalls       *bool                    `json:"parallel_tool_calls,omitempty"`
+	Internal                *bool                    `json:"internal,omitempty"`
+	Tags                    map[string]string        `json:"tags,omitempty"`
+	Credentials             map[string]string        `json:"credentials,omitempty"`
+	CacheOptions            map[string]interface{}   `json:"cache_options,omitempty"`
+	ExtraBody               []ExtraBody              `json:"extra_body,omitempty"`
+	ExtraHeaders            []map[string]interface{} `json:"extra_headers,omitempty"`
+	IncludeOriginalResponse *bool                    `json:"include_original_response,omitempty"`
+}
+
+// FeedbackRequest represents a feedback request
+type FeedbackRequest struct {
+	MetricName  string            `json:"metric_name"`
+	Value       interface{}       `json:"value"`
+	InferenceID *uuid.UUID        `json:"inference_id,omitempty"`
+	EpisodeID   *uuid.UUID        `json:"episode_id,omitempty"`
+	Dryrun      *bool             `json:"dryrun,omitempty"`
+	Internal    *bool             `json:"internal,omitempty"`
+	Tags        map[string]string `json:"tags,omitempty"`
+}
+
+// DynamicEvaluationRunRequest represents a dynamic evaluation run request
+type DynamicEvaluationRunRequest struct {
+	Variants    map[string]string `json:"variants"`
+	Tags        map[string]string `json:"tags,omitempty"`
+	ProjectName *string           `json:"project_name,omitempty"`
+	DisplayName *string           `json:"display_name,omitempty"`
+}
+
+// DynamicEvaluationRunEpisodeRequest represents a dynamic evaluation run episode request
+type DynamicEvaluationRunEpisodeRequest struct {
+	RunID         uuid.UUID         `json:"run_id"`
+	TaskName      *string           `json:"task_name,omitempty"`
+	DatapointName *string           `json:"datapoint_name,omitempty"`
+	Tags          map[string]string `json:"tags,omitempty"`
+}
+
+// ListDatapointsRequest represents a list datapoints request
+type ListDatapointsRequest struct {
+	DatasetName  string  `json:"dataset_name"`
+	FunctionName *string `json:"function_name,omitempty"`
+	Limit        *int    `json:"limit,omitempty"`
+	Offset       *int    `json:"offset,omitempty"`
+}
+
+// DatapointInsert represents a datapoint for insertion
+type DatapointInsert interface {
+	GetFunctionName() string
+}
+
+// Datapoint represents a datapoint
+type Datapoint struct {
+	ID           uuid.UUID      `json:"id"`
+	Input        InferenceInput `json:"input"`
+	Output       interface{}    `json:"output"`
+	DatasetName  string         `json:"dataset_name"`
+	FunctionName string         `json:"function_name"`
+	ToolParams   *ToolParams    `json:"tool_params,omitempty"`
+	OutputSchema interface{}    `json:"output_schema,omitempty"`
+	IsCustom     bool           `json:"is_custom"`
 }
