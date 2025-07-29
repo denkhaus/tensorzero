@@ -10,7 +10,7 @@
 //	defer client.Close()
 //
 //	response, err := client.Inference(context.Background(), &tensorzero.InferenceRequest{
-//		Input: tensorzero.InferenceInput{
+//		Input: request.InferenceInput{
 //			Messages: []tensorzero.Message{
 //				{
 //					Role: "user",
@@ -26,7 +26,7 @@
 // For streaming responses:
 //
 //	chunks, errs := client.InferenceStream(context.Background(), &tensorzero.InferenceRequest{
-//		Input: tensorzero.InferenceInput{
+//		Input: request.InferenceInput{
 //			Messages: []tensorzero.Message{
 //				{
 //					Role: "user",

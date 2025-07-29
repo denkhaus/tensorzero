@@ -1,6 +1,7 @@
 package types
 
 import (
+	"github.com/denkhaus/tensorzero/util"
 	"github.com/google/uuid"
 )
 
@@ -9,28 +10,28 @@ type InferenceRequestOption func(*InferenceRequest)
 // WithDryRun sets the dry run option for the inference request
 func WithDryRun(dryRun bool) InferenceRequestOption {
 	return func(g *InferenceRequest) {
-		g.Dryrun = BoolPtr(dryRun)
+		g.Dryrun = util.BoolPtr(dryRun)
 	}
 }
 
 // WithStream sets the stream option for the inference request
 func WithStream(stream bool) InferenceRequestOption {
 	return func(g *InferenceRequest) {
-		g.Stream = BoolPtr(stream)
+		g.Stream = util.BoolPtr(stream)
 	}
 }
 
 // WithFunctionName sets the function name for the inference request
 func WithFunctionName(functionName string) InferenceRequestOption {
 	return func(g *InferenceRequest) {
-		g.FunctionName = StringPtr(functionName)
+		g.FunctionName = util.StringPtr(functionName)
 	}
 }
 
 // WithModelName sets the model name for the inference request
 func WithModelName(modelName string) InferenceRequestOption {
 	return func(g *InferenceRequest) {
-		g.ModelName = StringPtr(modelName)
+		g.ModelName = util.StringPtr(modelName)
 	}
 }
 
@@ -74,7 +75,7 @@ func WithParams(params map[string]interface{}) InferenceRequestOption {
 // WithVariantName sets the variant name for the inference request
 func WithVariantName(variantName string) InferenceRequestOption {
 	return func(g *InferenceRequest) {
-		g.VariantName = StringPtr(variantName)
+		g.VariantName = util.StringPtr(variantName)
 	}
 }
 
@@ -88,14 +89,14 @@ func WithToolChoice(toolChoice ToolChoice) InferenceRequestOption {
 // WithParallelToolCalls sets the parallel tool calls option for the inference request
 func WithParallelToolCalls(parallelToolCalls bool) InferenceRequestOption {
 	return func(g *InferenceRequest) {
-		g.ParallelToolCalls = BoolPtr(parallelToolCalls)
+		g.ParallelToolCalls = util.BoolPtr(parallelToolCalls)
 	}
 }
 
 // WithInternal sets the internal option for the inference request
 func WithInternal(internal bool) InferenceRequestOption {
 	return func(g *InferenceRequest) {
-		g.Internal = BoolPtr(internal)
+		g.Internal = util.BoolPtr(internal)
 	}
 }
 
@@ -137,6 +138,6 @@ func WithExtraHeaders(extraHeaders []map[string]interface{}) InferenceRequestOpt
 // WithIncludeOriginalResponse sets the include original response option for the inference request
 func WithIncludeOriginalResponse(includeOriginalResponse bool) InferenceRequestOption {
 	return func(g *InferenceRequest) {
-		g.IncludeOriginalResponse = BoolPtr(includeOriginalResponse)
+		g.IncludeOriginalResponse = util.BoolPtr(includeOriginalResponse)
 	}
 }

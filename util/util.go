@@ -1,8 +1,6 @@
-package types
+package util
 
-import (
-	"github.com/google/uuid"
-)
+import "github.com/google/uuid"
 
 // StringPtr returns a pointer to the given string
 func StringPtr(s string) *string {

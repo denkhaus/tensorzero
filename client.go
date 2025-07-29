@@ -15,20 +15,6 @@ import (
 	"github.com/google/uuid"
 )
 
-// Gateway represents the base interface for TensorZero gateways
-type Gateway interface {
-	Inference(ctx context.Context, req *types.InferenceRequest) (types.InferenceResponse, error)
-	InferenceStream(ctx context.Context, req *types.InferenceRequest) (<-chan types.InferenceChunk, <-chan error)
-	Feedback(ctx context.Context, req *types.FeedbackRequest) (*types.FeedbackResponse, error)
-	DynamicEvaluationRun(ctx context.Context, req *types.DynamicEvaluationRunRequest) (*types.DynamicEvaluationRunResponse, error)
-	DynamicEvaluationRunEpisode(ctx context.Context, req *types.DynamicEvaluationRunEpisodeRequest) (*types.DynamicEvaluationRunEpisodeResponse, error)
-	BulkInsertDatapoints(ctx context.Context, datasetName string, datapoints []types.DatapointInsert) ([]uuid.UUID, error)
-	DeleteDatapoint(ctx context.Context, datasetName string, datapointID uuid.UUID) error
-	ListDatapoints(ctx context.Context, req *types.ListDatapointsRequest) ([]types.Datapoint, error)
-	ListInferences(ctx context.Context, req *types.ListInferencesRequest) ([]types.StoredInference, error)
-	Close() error
-}
-
 // HTTPGateway implements Gateway using HTTP requests
 type httpGateway struct {
 	baseURL    string
@@ -37,7 +23,7 @@ type httpGateway struct {
 }
 
 // NewHTTPGateway creates a new HTTP gateway client
-func NewHTTPGateway(baseURL string, options ...HTTPGatewayOption) Gateway {
+func NewHTTPGateway(baseURL string, options ...HTTPGatewayOption) types.Gateway {
 	gateway := &httpGateway{
 		baseURL:    strings.TrimSuffix(baseURL, "/"),
 		httpClient: &http.Client{},
