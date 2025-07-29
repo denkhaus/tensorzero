@@ -1,5 +1,10 @@
 package types
 
+import (
+	"encoding/json"
+	"fmt"
+)
+
 // Config represents TensorZero configuration
 type Config struct {
 	Functions FunctionsConfig `json:"functions"`
@@ -7,6 +12,46 @@ type Config struct {
 
 // FunctionsConfig represents function configurations
 type FunctionsConfig map[string]FunctionConfig
+
+func (fc *FunctionsConfig) UnmarshalJSON(data []byte) error {
+	rawMap := make(map[string]json.RawMessage)
+	if err := json.Unmarshal(data, &rawMap); err != nil {
+		return err
+	}
+
+	*fc = make(FunctionsConfig)
+	for name, rawFunc := range rawMap {
+		var typeField struct {
+			Type string `json:"type"`
+		}
+		if err := json.Unmarshal(rawFunc, &typeField); err != nil {
+			return err
+		}
+
+		var functionConfig FunctionConfig
+		switch typeField.Type {
+		case "chat":
+			var chatCfg ChatFunctionConfig
+			if err := json.Unmarshal(rawFunc, &chatCfg); err != nil {
+				return err
+			}
+			functionConfig = &chatCfg
+		case "json":
+			var jsonCfg JsonFunctionConfig
+			if err := json.Unmarshal(rawFunc, &jsonCfg); err != nil {
+				return err
+			}
+			functionConfig = &jsonCfg
+		default:
+			// Handle unknown types or return an error
+			// For now, we'll just skip or unmarshal into a generic type if necessary
+			// or simply return an error for unsupported types.
+			return fmt.Errorf("unknown function type: %s", typeField.Type)
+		}
+		(*fc)[name] = functionConfig
+	}
+	return nil
+}
 
 // ChatFunctionConfig represents a chat function configuration
 type ChatFunctionConfig struct {
@@ -45,6 +90,61 @@ func (j *JsonFunctionConfig) GetVariants() VariantsConfig {
 
 // VariantsConfig represents variant configurations
 type VariantsConfig map[string]VariantConfig
+
+func (vc *VariantsConfig) UnmarshalJSON(data []byte) error {
+	rawMap := make(map[string]json.RawMessage)
+	if err := json.Unmarshal(data, &rawMap); err != nil {
+		return err
+	}
+
+	*vc = make(VariantsConfig)
+	for name, rawVariant := range rawMap {
+		var typeField struct {
+			Type string `json:"type"`
+		}
+		if err := json.Unmarshal(rawVariant, &typeField); err != nil {
+			return err
+		}
+
+		var variantConfig VariantConfig
+		switch typeField.Type {
+		case "chat_completion":
+			var chatCompletionCfg ChatCompletionConfig
+			if err := json.Unmarshal(rawVariant, &chatCompletionCfg); err != nil {
+				return err
+			}
+			variantConfig = &chatCompletionCfg
+		case "best_of_n":
+			var bestOfNCfg BestOfNSamplingConfig
+			if err := json.Unmarshal(rawVariant, &bestOfNCfg); err != nil {
+				return err
+			}
+			variantConfig = &bestOfNCfg
+		case "dicl":
+			var diclCfg DiclConfig
+			if err := json.Unmarshal(rawVariant, &diclCfg); err != nil {
+				return err
+			}
+			variantConfig = &diclCfg
+		case "mixture_of_n":
+			var mixtureOfNCfg MixtureOfNConfig
+			if err := json.Unmarshal(rawVariant, &mixtureOfNCfg); err != nil {
+				return err
+			}
+			variantConfig = &mixtureOfNCfg
+		case "chain_of_thought":
+			var chainOfThoughtCfg ChainOfThoughtConfig
+			if err := json.Unmarshal(rawVariant, &chainOfThoughtCfg); err != nil {
+				return err
+			}
+			variantConfig = &chainOfThoughtCfg
+		default:
+			return fmt.Errorf("unknown variant type: %s", typeField.Type)
+		}
+		(*vc)[name] = variantConfig
+	}
+	return nil
+}
 
 // ChatCompletionConfig represents a chat completion variant
 type ChatCompletionConfig struct {

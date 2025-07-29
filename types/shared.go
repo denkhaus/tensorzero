@@ -1,6 +1,7 @@
 package types
 
 import (
+	"encoding/json"
 	"fmt"
 )
 
@@ -331,6 +332,140 @@ func (ucb *UnknownContentBlock) ToMap() map[string]interface{} {
 type Message struct {
 	Role    string         `json:"role"` // "user" or "assistant"
 	Content []ContentBlock `json:"content"`
+}
+
+// ToolCodeContent represents content of type "tool_code"
+type ToolCodeContent struct {
+	Language string `json:"language"`
+	Code     string `json:"code"`
+	Type     string `json:"type"`
+}
+
+func (tcc *ToolCodeContent) GetType() string { return tcc.Type }
+func (tcc *ToolCodeContent) ToMap() map[string]interface{} {
+	return map[string]interface{}{
+		"type":     tcc.Type,
+		"language": tcc.Language,
+		"code":     tcc.Code,
+	}
+}
+
+// ToolOutputContent represents content of type "tool_output"
+type ToolOutputContent struct {
+	Output string `json:"output"`
+	Type   string `json:"type"`
+}
+
+func (toc *ToolOutputContent) GetType() string { return toc.Type }
+func (toc *ToolOutputContent) ToMap() map[string]interface{} {
+	return map[string]interface{}{
+		"type":   toc.Type,
+		"output": toc.Output,
+	}
+}
+
+// UnmarshalJSON implements the json.Unmarshaler interface for Message.
+// This custom unmarshaler is needed to correctly unmarshal the 'Content' field,
+// which is a slice of the ContentBlock interface.
+func (m *Message) UnmarshalJSON(data []byte) error {
+	var raw struct {
+		Role    string            `json:"role"`
+		Content []json.RawMessage `json:"content"`
+	}
+
+	if err := json.Unmarshal(data, &raw); err != nil {
+		return err
+	}
+
+	m.Role = raw.Role
+	m.Content = make([]ContentBlock, len(raw.Content))
+
+	for i, rawBlock := range raw.Content {
+		var typeField struct {
+			Type string `json:"type"`
+		}
+		if err := json.Unmarshal(rawBlock, &typeField); err != nil {
+			return err
+		}
+
+		var contentBlock ContentBlock
+		switch typeField.Type {
+		case "text":
+			var text Text
+			if err := json.Unmarshal(rawBlock, &text); err != nil {
+				return err
+			}
+			contentBlock = &text
+		case "image_url":
+			var image ImageURL
+			if err := json.Unmarshal(rawBlock, &image); err != nil {
+				return err
+			}
+			contentBlock = &image
+		case "image_base64":
+			var image ImageBase64
+			if err := json.Unmarshal(rawBlock, &image); err != nil {
+				return err
+			}
+			contentBlock = &image
+		case "tool_code":
+			var toolCode ToolCodeContent
+			if err := json.Unmarshal(rawBlock, &toolCode); err != nil {
+				return err
+			}
+			contentBlock = &toolCode
+		case "tool_output":
+			var toolOutput ToolOutputContent
+			if err := json.Unmarshal(rawBlock, &toolOutput); err != nil {
+				return err
+			}
+			contentBlock = &toolOutput
+		case "tool_call":
+			var toolCall ToolCall
+			if err := json.Unmarshal(rawBlock, &toolCall); err != nil {
+				return err
+			}
+			contentBlock = &toolCall
+		case "thought":
+			var thought Thought
+			if err := json.Unmarshal(rawBlock, &thought); err != nil {
+				return err
+			}
+			contentBlock = &thought
+		case "tool_result":
+			var toolResult ToolResult
+			if err := json.Unmarshal(rawBlock, &toolResult); err != nil {
+				return err
+			}
+			contentBlock = &toolResult
+		case "raw_text":
+			var rawText RawText
+			if err := json.Unmarshal(rawBlock, &rawText); err != nil {
+				return err
+			}
+			contentBlock = &rawText
+		case "file_url":
+			var fileURL FileURL
+			if err := json.Unmarshal(rawBlock, &fileURL); err != nil {
+				return err
+			}
+			contentBlock = &fileURL
+		case "file_base64":
+			var fileBase64 FileBase64
+			if err := json.Unmarshal(rawBlock, &fileBase64); err != nil {
+				return err
+			}
+			contentBlock = &fileBase64
+		default:
+			var unknown UnknownContentBlock
+			if err := json.Unmarshal(rawBlock, &unknown); err != nil {
+				return err
+			}
+			contentBlock = &unknown
+		}
+		m.Content[i] = contentBlock
+	}
+	return nil
 }
 
 // TextChunk represents streaming text chunk

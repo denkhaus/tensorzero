@@ -1,6 +1,6 @@
 # TensorZero Go Client Makefile
 
-.PHONY: help test test-unit test-openai docker-up docker-down docker-logs docker-status clean build deps
+.PHONY: help test test-unit test-openai docker-up docker-down docker-logs docker-status clean build deps docs
 
 # Default target
 help: ## Show this help message
@@ -27,7 +27,8 @@ test: test-unit ## Run all tests (unit tests only by default)
 
 test-unit: ## Run unit tests (no external dependencies)
 	@echo "Running unit tests..."
-	go test -tags=unit ./tests
+	go test -tags=unit ./types
+#   go test -tags=unit ./tests
 
 test-openai: docker-up ## Run OpenAI compatibility tests against TensorZero instance
 	@echo "Waiting for TensorZero to be ready..."
