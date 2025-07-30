@@ -14,19 +14,40 @@ func (tcc *ToolCallChunk) GetID() string   { return tcc.ID }
 // ToolChoice represents tool choice options
 type ToolChoice interface{}
 
-// Tool represents a tool definition
+// Tool represents a tool definition that can be called by AI models during inference.
+// Tools enable models to perform actions, retrieve information, or interact with external systems.
 type Tool struct {
-	Description string      `json:"description"`
-	Parameters  interface{} `json:"parameters"`
-	Name        string      `json:"name"`
-	Strict      bool        `json:"strict"`
+	// Description provides a clear explanation of what this tool does and when to use it.
+	// This helps the model understand the tool's purpose and make appropriate calls.
+	Description string `json:"description"`
+
+	// Parameters defines the JSON schema for the tool's input parameters.
+	// This schema validates the arguments the model provides when calling the tool.
+	Parameters interface{} `json:"parameters"`
+
+	// Name is the unique identifier for this tool. Must be unique within the function scope.
+	// The model will use this name when requesting to call the tool.
+	Name string `json:"name"`
+
+	// Strict enforces strict parameter validation according to the schema.
+	// When true, ensures the model provides exactly the required parameters in the correct format.
+	Strict bool `json:"strict"`
 }
 
-// ToolParams represents tool parameters
+// ToolParams represents tool-related parameters for an inference request.
+// This configures which tools are available and how the model should use them.
 type ToolParams struct {
-	ToolsAvailable    []Tool `json:"tools_available"`
-	ToolChoice        string `json:"tool_choice"`
-	ParallelToolCalls *bool  `json:"parallel_tool_calls,omitempty"`
+	// ToolsAvailable lists all tools that are available for the model to call during inference.
+	// These can include both predefined tools from configuration and additional dynamic tools.
+	ToolsAvailable []Tool `json:"tools_available"`
+
+	// ToolChoice specifies the strategy for tool selection during inference.
+	// Options include "none", "auto", "required", or specific tool selection.
+	ToolChoice string `json:"tool_choice"`
+
+	// ParallelToolCalls, when true, allows the model to request multiple tool calls
+	// in a single response. Only supported by certain model providers.
+	ParallelToolCalls *bool `json:"parallel_tool_calls,omitempty"`
 }
 
 // ToolCodeContent represents content of type "tool_code"
@@ -59,12 +80,22 @@ func (toc *ToolOutputContent) ToMap() map[string]interface{} {
 	}
 }
 
-// ToolResult represents a tool result
+// ToolResult represents the result of a tool call execution.
+// This contains the output from executing a tool that was called by the model.
 type ToolResult struct {
-	Name   string `json:"name"`
+	// Name is the name of the tool that was executed, matching the tool definition.
+	Name string `json:"name"`
+
+	// Result contains the actual output or return value from executing the tool.
+	// This is typically a string representation of the tool's output.
 	Result string `json:"result"`
-	ID     string `json:"id"`
-	Type   string `json:"type"`
+
+	// ID is the unique identifier for this tool call, matching the ID from the tool call request.
+	// This links the result back to the specific tool call that generated it.
+	ID string `json:"id"`
+
+	// Type indicates the content type, typically "tool_result" for tool execution results.
+	Type string `json:"type"`
 }
 
 func NewToolResult(name, result, id string) *ToolResult {

@@ -12,12 +12,30 @@ This Go SDK is a complete and accurate port of the Python SDK, providing full fe
 
 ## Features
 
-*   **Complete TensorZero API Client:** Implements all TensorZero API endpoints, including inference, streaming, feedback, and datapoint management.
-*   **OpenAI SDK Compatibility:** Designed to be compatible with the OpenAI SDK.
-*   **Go-Idiomatic Design:** Leverages Go's best practices, including context support, channel-based streaming, and structured error handling.
+*   **Complete TensorZero API Client:** Implements all TensorZero API endpoints, including inference, streaming, feedback, datapoint management, and dynamic evaluation.
+*   **OpenAI SDK Compatibility:** Designed to be compatible with the OpenAI SDK for easy migration.
+*   **Go-Idiomatic Design:** Leverages Go's best practices, including context support, channel-based streaming, structured error handling, and comprehensive documentation.
+*   **Well-Organized Package Structure:** Logically grouped functionality with dedicated packages for `inference`, `feedback`, `evaluation`, `datapoint`, `tool`, and more.
+*   **Comprehensive Documentation:** Extensively documented structs and types with detailed field descriptions, usage examples, and best practices.
 *   **Production-Ready Testing:** Comprehensive test suite with unit tests, integration tests, performance benchmarks, and reliability testing. See [INTEGRATION_TESTS.md](./docs/INTEGRATION_TESTS.md) for details.
 *   **Automated Test Environment:** Complete Docker-based development and testing environment with automated setup scripts.
-*   **Enterprise-Grade Reliability:** Concurrent request handling, proper resource management, and graceful error handling.
+*   **Enterprise-Grade Reliability:** Concurrent request handling, proper resource management, graceful error handling, and robust streaming support.
+
+## Package Structure
+
+The TensorZero Go client is organized into logical packages for better maintainability and ease of use:
+
+- **`inference`** - Core inference requests, responses, and streaming functionality
+- **`feedback`** - Feedback submission for metrics and model improvement
+- **`evaluation`** - Dynamic evaluation runs and episode management
+- **`datapoint`** - Dataset management and datapoint operations
+- **`tool`** - Tool definitions and parameters for model interactions
+- **`config`** - Configuration types and validation
+- **`filter`** - Advanced filtering capabilities for queries
+- **`shared`** - Common types and utilities used across packages
+- **`errors`** - TensorZero-specific error types and handling
+
+Each package contains comprehensive documentation with detailed field descriptions, usage examples, and best practices.
 
 ## Getting Started
 
@@ -38,6 +56,8 @@ import (
     "log"
 
     "github.com/denkhaus/tensorzero"
+    "github.com/denkhaus/tensorzero/inference"
+    "github.com/denkhaus/tensorzero/shared"
 )
 
 func main() {
@@ -45,22 +65,39 @@ func main() {
     client := tensorzero.NewHTTPGateway("http://localhost:3000")
     defer client.Close()
 
-    // Create an inference request
-    request := &tensorzero.InferenceRequest{
-        Input: tensorzero.InferenceInput{
-            Messages: []tensorzero.Message{
+    ctx := context.Background()
+
+    // Create an inference request with comprehensive documentation
+    // Each field is well-documented with usage examples and constraints
+    resp, err := client.Inference(ctx, &inference.InferenceRequest{
+        FunctionName: stringPtr("qa_function"), // Function defined in TensorZero config
+        Input: inference.InferenceInput{
+            Messages: []shared.Message{
                 {
-                    Role: tensorzero.RoleUser,
-                    Content: []tensorzero.ContentBlock{
-                        tensorzero.NewText("What is the capital of France?"),
+                    Role: "user",
+                    Content: []shared.ContentBlock{
+                        &shared.Text{Text: "What is the capital of France?"},
                     },
                 },
             },
         },
-        FunctionName: tensorzero.StringPtr("qa_function"),
+        // Optional: Add tags for tracking and analysis
+        Tags: map[string]string{
+            "user_id": "123",
+            "session": "abc",
+            "source": "api",
+        },
+    })
+    if err != nil {
+        log.Fatal(err)
     }
 
-    // Make the inference request
+    fmt.Printf("Response: %+v\n", resp)
+}
+
+func stringPtr(s string) *string {
+    return &s
+}
     response, err := client.Inference(context.Background(), request)
     if err != nil {
         log.Fatal(err)
@@ -109,11 +146,16 @@ feedbackResp, err := client.Feedback(ctx, &feedback.Request{
     InferenceID: &inferenceID,
 })
 
-// Dynamic evaluation
+// Dynamic evaluation - test different variants against datasets
 evalResp, err := client.DynamicEvaluationRun(ctx, &evaluation.RunRequest{
     Variants: map[string]string{
         "model_a": "gpt-4",
         "model_b": "claude-3",
+    },
+    DisplayName: stringPtr("A/B Test: GPT-4 vs Claude-3"),
+    Tags: map[string]string{
+        "experiment": "model_comparison",
+        "version": "v1.0",
     },
 })
 ```
