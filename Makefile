@@ -116,6 +116,10 @@ health-check: ## Check if TensorZero services are healthy
 clean: docker-clean ## Clean up everything
 	go clean -cache
 	go clean -modcache
+	@echo "Removing temporary files..."
+	@find . -name "tmp_rovodev_*" -type f -delete 2>/dev/null || true
+	@find . -name "*.tmp" -type f -delete 2>/dev/null || true
+	@find . -name ".DS_Store" -type f -delete 2>/dev/null || true
 	@echo "Cleanup completed"
 
 # Quick commands
