@@ -67,10 +67,9 @@ func main() {
 
     ctx := context.Background()
 
-    // Create an inference request with comprehensive documentation
-    // Each field is well-documented with usage examples and constraints
+    // Method 1: Direct struct initialization with utility functions
     resp, err := client.Inference(ctx, &inference.InferenceRequest{
-        FunctionName: stringPtr("qa_function"), // Function defined in TensorZero config
+        FunctionName: util.StringPtr("qa_function"), // Use util functions for pointers
         Input: inference.InferenceInput{
             Messages: []shared.Message{
                 {
@@ -81,13 +80,26 @@ func main() {
                 },
             },
         },
-        // Optional: Add tags for tracking and analysis
         Tags: map[string]string{
             "user_id": "123",
             "session": "abc",
-            "source": "api",
+            "source":  "api",
         },
+        Dryrun: util.BoolPtr(false), // Use util.BoolPtr for optional booleans
     })
+
+    // Method 2: Clean options pattern with helper function
+    resp2, err := makeInference(ctx, client, 
+        "What is the capital of France?",
+        inference.WithFunctionName("qa_function"),
+        inference.WithTags(map[string]string{
+            "user_id": "123",
+            "session": "abc",
+            "source":  "api",
+        }),
+        inference.WithDryRun(false),
+        inference.WithIncludeOriginalResponse(true),
+    )
     if err != nil {
         log.Fatal(err)
     }
@@ -95,29 +107,62 @@ func main() {
     fmt.Printf("Response: %+v\n", resp)
 }
 
-func stringPtr(s string) *string {
-    return &s
-}
-    response, err := client.Inference(context.Background(), request)
-    if err != nil {
-        log.Fatal(err)
+// Helper function demonstrating clean options pattern usage
+func makeInference(ctx context.Context, client tensorzero.Gateway, message string, opts ...inference.InferenceRequestOption) (inference.InferenceResponse, error) {
+    req := &inference.InferenceRequest{
+        Input: inference.InferenceInput{
+            Messages: []shared.Message{
+                {
+                    Role: "user",
+                    Content: []shared.ContentBlock{
+                        &shared.Text{Text: message},
+                    },
+                },
+            },
+        },
     }
+    
+    // Apply all options
+    for _, opt := range opts {
+        opt(req)
+    }
+    
+    return client.Inference(ctx, req)
+}
 
-    // Handle the response
-    switch resp := response.(type) {
-    case *tensorzero.ChatInferenceResponse:
-        fmt.Printf("Response: %v\n", resp.Content)
-    case *tensorzero.JsonInferenceResponse:
-        fmt.Printf("JSON Response: %v\n", resp.Output)
-    }
-}
+// The util package provides helpful pointer functions:
+// util.StringPtr(), util.BoolPtr(), util.IntPtr(), util.UUIDPtr(), util.Float64Ptr()
 ```
 
 ### Advanced Usage
 
 #### Streaming with Error Handling
 ```go
-chunks, errs := client.InferenceStream(context.Background(), request)
+// Create a streaming request using options pattern
+streamReq := &inference.InferenceRequest{
+    Input: inference.InferenceInput{
+        Messages: []shared.Message{
+            {
+                Role: "user",
+                Content: []shared.ContentBlock{
+                    &shared.Text{Text: "Tell me a story"},
+                },
+            },
+        },
+    },
+}
+
+// Apply streaming options cleanly
+applyOptions(streamReq,
+    inference.WithFunctionName("story_generator"),
+    inference.WithStream(true),
+    inference.WithTags(map[string]string{
+        "type": "streaming",
+        "user": "demo",
+    }),
+)
+
+chunks, errs := client.InferenceStream(ctx, streamReq)
 
 for {
     select {
@@ -125,8 +170,8 @@ for {
         if !ok {
             return // Stream finished
         }
-        // Process chunk
-        fmt.Printf("Received: %v\n", chunk)
+        // Process chunk using the inference package types
+        fmt.Printf("Received chunk: %v\n", chunk)
         
     case err := <-errs:
         if err != nil {
@@ -135,15 +180,54 @@ for {
         }
     }
 }
+
+// Helper function for applying multiple options
+func applyOptions(req *inference.InferenceRequest, opts ...inference.InferenceRequestOption) {
+    for _, opt := range opts {
+        opt(req)
+    }
+}
+
+// Example: Create inference with clean options pattern
+func createChatInference(ctx context.Context, client tensorzero.Gateway, message string) (inference.InferenceResponse, error) {
+    return makeInference(ctx, client, message,
+        inference.WithFunctionName("chat_assistant"),
+        inference.WithTags(map[string]string{"type": "chat"}),
+        inference.WithDryRun(false),
+    )
+}
 ```
 
 #### Feedback and Evaluation
 ```go
-// Submit feedback
+import (
+    "github.com/denkhaus/tensorzero/feedback"
+    "github.com/denkhaus/tensorzero/evaluation"
+    "github.com/denkhaus/tensorzero/util"
+)
+
+// Submit feedback using utility functions
+inferenceID := uuid.New() // From previous inference
 feedbackResp, err := client.Feedback(ctx, &feedback.Request{
     MetricName:  "user_rating",
     Value:       5,
-    InferenceID: &inferenceID,
+    InferenceID: util.UUIDPtr(inferenceID), // Use util.UUIDPtr
+    Tags: map[string]string{
+        "source": "user_feedback",
+        "rating_type": "helpfulness",
+    },
+    Internal: util.BoolPtr(false), // External user feedback
+})
+
+// Submit boolean metric feedback
+boolFeedback, err := client.Feedback(ctx, &feedback.Request{
+    MetricName:  "is_helpful",
+    Value:       true,
+    InferenceID: util.UUIDPtr(inferenceID),
+    Tags: map[string]string{
+        "evaluator": "human",
+        "confidence": "high",
+    },
 })
 
 // Dynamic evaluation - test different variants against datasets
@@ -151,18 +235,38 @@ evalResp, err := client.DynamicEvaluationRun(ctx, &evaluation.RunRequest{
     Variants: map[string]string{
         "model_a": "gpt-4",
         "model_b": "claude-3",
+        "model_c": "gemini-pro",
     },
-    DisplayName: stringPtr("A/B Test: GPT-4 vs Claude-3"),
+    DisplayName: util.StringPtr("A/B/C Test: Model Comparison"),
+    ProjectName: util.StringPtr("q4-model-evaluation"),
     Tags: map[string]string{
         "experiment": "model_comparison",
         "version": "v1.0",
+        "dataset": "qa_benchmark",
+    },
+})
+
+// Create evaluation episodes
+episodeResp, err := client.DynamicEvaluationRunEpisode(ctx, &evaluation.EpisodeRequest{
+    RunID: evalResp.RunID,
+    TaskName: util.StringPtr("question_answering"),
+    DatapointName: util.StringPtr("sample_qa_001"),
+    Tags: map[string]string{
+        "difficulty": "medium",
+        "category": "factual",
     },
 })
 ```
 
 #### Advanced Filtering
 ```go
-// Complex filtering with AND/OR logic
+import (
+    "github.com/denkhaus/tensorzero/filter"
+    "github.com/denkhaus/tensorzero/shared"
+    "github.com/denkhaus/tensorzero/util"
+)
+
+// Complex filtering with AND/OR logic using the filter package
 complexFilter := filter.NewAndFilter(
     filter.NewTagFilter("environment", "production", "="),
     filter.NewOrFilter(
@@ -172,9 +276,18 @@ complexFilter := filter.NewAndFilter(
 )
 
 inferences, err := client.ListInferences(ctx, &inference.ListInferencesRequest{
-    Filters: []filter.InferenceFilterTreeNode{complexFilter},
-    OrderBy: shared.NewOrderByTimestamp("desc"),
-    Limit:   util.IntPtr(50),
+    FunctionName: util.StringPtr("qa_function"), // Filter by function
+    Filter:       complexFilter,
+    OrderBy:      &shared.OrderBy{Field: "timestamp", Direction: "desc"},
+    Limit:        util.IntPtr(50),
+    Offset:       util.IntPtr(0), // For pagination
+})
+
+// Example: List inferences for a specific episode
+episodeInferences, err := client.ListInferences(ctx, &inference.ListInferencesRequest{
+    EpisodeID: util.UUIDPtr(episodeID),
+    OrderBy:   &shared.OrderBy{Field: "timestamp", Direction: "asc"},
+    Limit:     util.IntPtr(100),
 })
 ```
 
