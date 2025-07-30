@@ -204,6 +204,7 @@ import (
     "github.com/denkhaus/tensorzero/feedback"
     "github.com/denkhaus/tensorzero/evaluation"
     "github.com/denkhaus/tensorzero/util"
+    "github.com/google/uuid"
 )
 
 // Submit feedback using utility functions
@@ -264,6 +265,7 @@ import (
     "github.com/denkhaus/tensorzero/filter"
     "github.com/denkhaus/tensorzero/shared"
     "github.com/denkhaus/tensorzero/util"
+    "github.com/google/uuid"
 )
 
 // Complex filtering with AND/OR logic using the filter package
@@ -300,7 +302,7 @@ This project includes a comprehensive testing framework with automated setup and
 
 *   **Go 1.21+** - Latest Go version
 *   **Docker & Docker Compose** - Container runtime
-*   **OpenRouter API Key** - For model access (optional for dry-run tests)
+*   **OpenRouter API Key** - For model access (create `docker/.env` with `OPENROUTER_API_KEY=your_key`)
 
 ### Quick Start
 
@@ -310,11 +312,13 @@ This project includes a comprehensive testing framework with automated setup and
     cd tensorzero-go
     ```
 
-2.  **Automated setup and testing:**
+2.  **Setup and testing:**
     ```bash
-    # One-command setup and test execution
-    ./scripts/setup-integration-tests.sh
-    ./scripts/run-integration-tests.sh --verbose
+    # Setup development environment
+    make setup
+    
+    # Run all tests
+    make test-all
     ```
 
 ### Testing Options
@@ -326,11 +330,8 @@ make test-unit
 
 #### Integration Tests (Full TensorZero API testing)
 ```bash
-# Quick integration tests
+# Run integration tests
 make test-integration
-
-# Comprehensive test suite with benchmarks
-./scripts/run-integration-tests.sh --verbose --benchmark
 
 # Custom test scenarios
 go test -tags=integration ./tests -run TestIntegration_BasicInference -v
@@ -389,18 +390,24 @@ Our comprehensive test suite includes:
 
 ```bash
 # 1. Setup development environment
-./scripts/setup-integration-tests.sh
+make setup
 
 # 2. Run tests during development
 make test-unit                    # Fast feedback loop
 make test-integration            # API validation
-./scripts/run-integration-tests.sh --verbose  # Full test suite
+make test-all                    # Complete test suite
 
 # 3. Performance testing
 go test -tags=integration ./tests -bench=. -benchmem
 
-# 4. Cleanup
-make docker-down
+# 4. Check service health
+make health-check
+
+# 5. View logs if needed
+make logs
+
+# 6. Cleanup
+make clean
 ```
 
 ## Architecture

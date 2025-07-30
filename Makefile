@@ -81,9 +81,11 @@ docker-clean: docker-down ## Clean up Docker resources
 	docker system prune -f
 
 # Development helpers
-dev-setup: deps docker-up ## Set up development environment
+setup: deps docker-up ## Set up development environment
 	@echo "Development environment ready!"
 	@echo "Run 'make test-all' to run all tests"
+
+dev-setup: setup ## Alias for setup (backward compatibility)
 
 check-env: ## Check if required environment variables are set
 	@echo "Checking environment..."
@@ -120,6 +122,8 @@ clean: docker-clean ## Clean up everything
 up: docker-up ## Alias for docker-up
 down: docker-down ## Alias for docker-down
 logs: docker-logs ## Alias for docker-logs
+status: docker-status ## Alias for docker-status
+restart: docker-restart ## Alias for docker-restart
 
 # CI/CD helpers
 ci-test: ## Run tests suitable for CI (with timeout)
