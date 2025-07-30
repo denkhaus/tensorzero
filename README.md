@@ -207,7 +207,7 @@ import (
 )
 
 // Submit feedback using utility functions
-inferenceID := uuid.New() // From previous inference
+inferenceID := uuid.NewV7() // TensorZero requires UUIDv7 for proper timestamp ordering
 feedbackResp, err := client.Feedback(ctx, &feedback.Request{
     MetricName:  "user_rating",
     Value:       5,
@@ -284,6 +284,7 @@ inferences, err := client.ListInferences(ctx, &inference.ListInferencesRequest{
 })
 
 // Example: List inferences for a specific episode
+episodeID := uuid.NewV7() // Use UUIDv7 for episode IDs
 episodeInferences, err := client.ListInferences(ctx, &inference.ListInferencesRequest{
     EpisodeID: util.UUIDPtr(episodeID),
     OrderBy:   &shared.OrderBy{Field: "timestamp", Direction: "asc"},
