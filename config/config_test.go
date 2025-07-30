@@ -1,4 +1,6 @@
-package types
+//go:build unit
+
+package config
 
 import (
 	"encoding/json"
@@ -6,6 +8,37 @@ import (
 
 	"github.com/stretchr/testify/assert"
 )
+
+// MockFunctionConfig implements the FunctionConfig interface
+type MockFunctionConfig struct {
+	Type     string
+	Variants VariantsConfig
+}
+
+func (m *MockFunctionConfig) GetType() string {
+	return m.Type
+}
+func (m *MockFunctionConfig) GetVariants() VariantsConfig {
+	return m.Variants
+}
+
+// MockVariantConfig implements the VariantConfig interface
+type MockVariantConfig struct {
+	Type string
+}
+
+func (m *MockVariantConfig) GetType() string {
+	return m.Type
+}
+
+// MockOptimizationConfig implements the OptimizationConfig interface
+type MockOptimizationConfig struct {
+	Type string
+}
+
+func (m *MockOptimizationConfig) GetType() string {
+	return m.Type
+}
 
 func TestConfig(t *testing.T) {
 	configJSON := `{
@@ -209,4 +242,23 @@ func TestOptimizationJobInfo(t *testing.T) {
 	assert.NotNil(t, info.EstimatedFinish)
 	assert.Equal(t, int64(1678886400), *info.EstimatedFinish)
 	assert.Nil(t, info.Output)
+}
+
+func TestFunctionConfigInterface(t *testing.T) {
+	mockConfig := &MockFunctionConfig{Type: "chat_func", Variants: VariantsConfig{}}
+	var _ FunctionConfig = mockConfig // Assert that MockFunctionConfig implements FunctionConfig
+	assert.Equal(t, "chat_func", mockConfig.GetType())
+	assert.NotNil(t, mockConfig.GetVariants())
+}
+
+func TestVariantConfigInterface(t *testing.T) {
+	mockConfig := &MockVariantConfig{Type: "chat_completion_variant"}
+	var _ VariantConfig = mockConfig // Assert that MockVariantConfig implements VariantConfig
+	assert.Equal(t, "chat_completion_variant", mockConfig.GetType())
+}
+
+func TestOptimizationConfigInterface(t *testing.T) {
+	mockConfig := &MockOptimizationConfig{Type: "sft_optimization"}
+	var _ OptimizationConfig = mockConfig // Assert that MockOptimizationConfig implements OptimizationConfig
+	assert.Equal(t, "sft_optimization", mockConfig.GetType())
 }

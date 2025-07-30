@@ -1,9 +1,24 @@
-package types
+package config
 
 import (
 	"encoding/json"
 	"fmt"
 )
+
+// FunctionConfig represents a function configuration
+type FunctionConfig interface {
+	GetType() string
+	GetVariants() VariantsConfig
+}
+
+type VariantConfig interface {
+	GetType() string
+}
+
+// OptimizationConfig represents optimization configurations
+type OptimizationConfig interface {
+	GetType() string
+}
 
 // Config represents TensorZero configuration
 type Config struct {

@@ -1,4 +1,9 @@
-package types
+package filter
+
+// InferenceFilterTreeNode represents the base interface for filter nodes
+type InferenceFilterTreeNode interface {
+	GetType() string
+}
 
 // FloatMetricFilter filters inferences by float metric values
 type FloatMetricFilter struct {

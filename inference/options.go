@@ -1,6 +1,7 @@
-package types
+package inference
 
 import (
+	"github.com/denkhaus/tensorzero/tool"
 	"github.com/denkhaus/tensorzero/util"
 	"github.com/google/uuid"
 )
@@ -80,7 +81,7 @@ func WithVariantName(variantName string) InferenceRequestOption {
 }
 
 // WithToolChoice sets the tool choice for the inference request
-func WithToolChoice(toolChoice ToolChoice) InferenceRequestOption {
+func WithToolChoice(toolChoice tool.ToolChoice) InferenceRequestOption {
 	return func(g *InferenceRequest) {
 		g.ToolChoice = toolChoice
 	}

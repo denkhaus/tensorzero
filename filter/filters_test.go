@@ -1,4 +1,6 @@
-package types
+//go:build unit
+
+package filter
 
 import (
 	"encoding/json"

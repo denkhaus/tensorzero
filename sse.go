@@ -31,30 +31,30 @@ func NewSSEScanner(r io.Reader) *SSEScanner {
 // Scan scans the next SSE event
 func (s *SSEScanner) Scan() bool {
 	s.event = SSEEvent{}
-	
+
 	for s.scanner.Scan() {
 		line := s.scanner.Text()
-		
+
 		// Empty line indicates end of event
 		if line == "" {
 			return true
 		}
-		
+
 		// Skip comments
 		if strings.HasPrefix(line, ":") {
 			continue
 		}
-		
+
 		// Parse field
 		if colonIndex := strings.Index(line, ":"); colonIndex != -1 {
 			field := line[:colonIndex]
 			value := line[colonIndex+1:]
-			
+
 			// Remove leading space from value
 			if len(value) > 0 && value[0] == ' ' {
 				value = value[1:]
 			}
-			
+
 			switch field {
 			case "event":
 				s.event.Event = value
@@ -76,7 +76,7 @@ func (s *SSEScanner) Scan() bool {
 			s.event.Data += line
 		}
 	}
-	
+
 	s.err = s.scanner.Err()
 	return false
 }

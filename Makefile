@@ -1,6 +1,6 @@
 # TensorZero Go Client Makefile
 
-.PHONY: help test test-unit test-openai docker-up docker-down docker-logs docker-status clean build deps docs
+.PHONY: help test test-unit test-integration test-openai test-all docker-up docker-down docker-logs docker-status clean build deps docs
 
 # Default target
 help: ## Show this help message
@@ -27,20 +27,21 @@ test: test-unit ## Run all tests (unit tests only by default)
 
 test-unit: ## Run unit tests (no external dependencies)
 	@echo "Running unit tests..."
-	go test -tags=unit ./types
-#   go test -tags=unit ./tests
+	go test -tags=unit ./...
 
-test-openai: docker-up ## Run OpenAI compatibility tests against TensorZero instance
+test-integration: docker-up ## Run integration tests against TensorZero instance
 	@echo "Waiting for TensorZero to be ready..."
 	@timeout 60 bash -c 'until curl -s $(TENSORZERO_URL)/health > /dev/null 2>&1; do echo "Waiting for TensorZero..."; sleep 2; done' || (echo "TensorZero failed to start" && exit 1)
-	@echo "Running OpenAI compatibility tests..."
-	go test -tags=integration ./tests/openai_test.go -v
-	@echo "OpenAI compatibility tests completed"
+	@echo "Running integration tests..."
+	go test -tags=integration ./... -v
+	@echo "Integration tests completed"
 
-test-all: docker-up ## Run all tests including OpenAI compatibility tests
+test-openai: test-integration ## Alias for integration tests (backward compatibility)
+
+test-all: ## Run all tests (unit + integration)
 	@echo "Running all tests..."
 	$(MAKE) test-unit
-	go test -tags=integration ./tests
+	$(MAKE) test-integration
 
 # Docker management
 docker-up: ## Start TensorZero services with Docker Compose
@@ -124,6 +125,10 @@ logs: docker-logs ## Alias for docker-logs
 ci-test: ## Run tests suitable for CI (with timeout)
 	@echo "Running CI tests..."
 	timeout 300 $(MAKE) test-all || (echo "Tests timed out or failed" && $(MAKE) docker-logs && exit 1)
+
+ci-test-unit: ## Run only unit tests for CI (fast)
+	@echo "Running CI unit tests..."
+	$(MAKE) test-unit
 
 # Documentation
 docs: ## Generate documentation

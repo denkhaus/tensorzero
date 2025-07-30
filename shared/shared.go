@@ -1,9 +1,14 @@
-package types
+package shared
 
 import (
 	"encoding/json"
 	"fmt"
+
+	"github.com/denkhaus/tensorzero/tool"
 )
+
+// System represents system content
+type System interface{}
 
 // Usage represents token usage information
 type Usage struct {
@@ -11,16 +16,11 @@ type Usage struct {
 	OutputTokens int `json:"output_tokens"`
 }
 
-// FinishReason represents the reason why inference finished
-type FinishReason string
-
-const (
-	FinishReasonStop          FinishReason = "stop"
-	FinishReasonLength        FinishReason = "length"
-	FinishReasonToolCall      FinishReason = "tool_call"
-	FinishReasonContentFilter FinishReason = "content_filter"
-	FinishReasonUnknown       FinishReason = "unknown"
-)
+// ContentBlock represents a piece of content in a message
+type ContentBlock interface {
+	GetType() string
+	ToMap() map[string]interface{}
+}
 
 // Text represents text content
 type Text struct {
@@ -269,36 +269,6 @@ func (t *Thought) ToMap() map[string]interface{} {
 	return result
 }
 
-// ToolResult represents a tool result
-type ToolResult struct {
-	Name   string `json:"name"`
-	Result string `json:"result"`
-	ID     string `json:"id"`
-	Type   string `json:"type"`
-}
-
-func NewToolResult(name, result, id string) *ToolResult {
-	return &ToolResult{
-		Name:   name,
-		Result: result,
-		ID:     id,
-		Type:   "tool_result",
-	}
-}
-
-func (tr *ToolResult) GetType() string {
-	return tr.Type
-}
-
-func (tr *ToolResult) ToMap() map[string]interface{} {
-	return map[string]interface{}{
-		"type":   tr.Type,
-		"name":   tr.Name,
-		"result": tr.Result,
-		"id":     tr.ID,
-	}
-}
-
 // UnknownContentBlock represents unknown content
 type UnknownContentBlock struct {
 	Data              interface{} `json:"data"`
@@ -332,36 +302,6 @@ func (ucb *UnknownContentBlock) ToMap() map[string]interface{} {
 type Message struct {
 	Role    string         `json:"role"` // "user" or "assistant"
 	Content []ContentBlock `json:"content"`
-}
-
-// ToolCodeContent represents content of type "tool_code"
-type ToolCodeContent struct {
-	Language string `json:"language"`
-	Code     string `json:"code"`
-	Type     string `json:"type"`
-}
-
-func (tcc *ToolCodeContent) GetType() string { return tcc.Type }
-func (tcc *ToolCodeContent) ToMap() map[string]interface{} {
-	return map[string]interface{}{
-		"type":     tcc.Type,
-		"language": tcc.Language,
-		"code":     tcc.Code,
-	}
-}
-
-// ToolOutputContent represents content of type "tool_output"
-type ToolOutputContent struct {
-	Output string `json:"output"`
-	Type   string `json:"type"`
-}
-
-func (toc *ToolOutputContent) GetType() string { return toc.Type }
-func (toc *ToolOutputContent) ToMap() map[string]interface{} {
-	return map[string]interface{}{
-		"type":   toc.Type,
-		"output": toc.Output,
-	}
 }
 
 // UnmarshalJSON implements the json.Unmarshaler interface for Message.
@@ -409,13 +349,13 @@ func (m *Message) UnmarshalJSON(data []byte) error {
 			}
 			contentBlock = &image
 		case "tool_code":
-			var toolCode ToolCodeContent
+			var toolCode tool.ToolCodeContent
 			if err := json.Unmarshal(rawBlock, &toolCode); err != nil {
 				return err
 			}
 			contentBlock = &toolCode
 		case "tool_output":
-			var toolOutput ToolOutputContent
+			var toolOutput tool.ToolOutputContent
 			if err := json.Unmarshal(rawBlock, &toolOutput); err != nil {
 				return err
 			}
@@ -433,7 +373,7 @@ func (m *Message) UnmarshalJSON(data []byte) error {
 			}
 			contentBlock = &thought
 		case "tool_result":
-			var toolResult ToolResult
+			var toolResult tool.ToolResult
 			if err := json.Unmarshal(rawBlock, &toolResult); err != nil {
 				return err
 			}
@@ -478,17 +418,6 @@ type TextChunk struct {
 func (tc *TextChunk) GetType() string { return tc.Type }
 func (tc *TextChunk) GetID() string   { return tc.ID }
 
-// ToolCallChunk represents streaming tool call chunk
-type ToolCallChunk struct {
-	ID           string `json:"id"`
-	RawArguments string `json:"raw_arguments"`
-	RawName      string `json:"raw_name"`
-	Type         string `json:"type"`
-}
-
-func (tcc *ToolCallChunk) GetType() string { return tcc.Type }
-func (tcc *ToolCallChunk) GetID() string   { return tcc.ID }
-
 // ThoughtChunk represents streaming thought chunk
 type ThoughtChunk struct {
 	ID        string  `json:"id"`
@@ -499,24 +428,6 @@ type ThoughtChunk struct {
 
 func (tc *ThoughtChunk) GetType() string { return tc.Type }
 func (tc *ThoughtChunk) GetID() string   { return tc.ID }
-
-// Tool represents a tool definition
-type Tool struct {
-	Description string      `json:"description"`
-	Parameters  interface{} `json:"parameters"`
-	Name        string      `json:"name"`
-	Strict      bool        `json:"strict"`
-}
-
-// ToolChoice represents tool choice options
-type ToolChoice interface{}
-
-// ToolParams represents tool parameters
-type ToolParams struct {
-	ToolsAvailable    []Tool `json:"tools_available"`
-	ToolChoice        string `json:"tool_choice"`
-	ParallelToolCalls *bool  `json:"parallel_tool_calls,omitempty"`
-}
 
 // ExtraBody represents extra body content for requests
 

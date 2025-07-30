@@ -1,8 +1,11 @@
-package types
+//go:build unit
+
+package inference
 
 import (
 	"testing"
 
+	"github.com/denkhaus/tensorzero/tool"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 )
@@ -91,7 +94,7 @@ func TestWithVariantName(t *testing.T) {
 
 func TestWithToolChoice(t *testing.T) {
 	req := &InferenceRequest{}
-	choice := ToolChoice("auto")
+	choice := tool.ToolChoice("auto")
 	WithToolChoice(choice)(req)
 	assert.Equal(t, choice, req.ToolChoice)
 }

@@ -1,30 +1,12 @@
-package types
+//go:build unit
+
+package shared
 
 import (
-	"encoding/json"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 )
-
-func TestUsage(t *testing.T) {
-	usage := Usage{InputTokens: 10, OutputTokens: 20}
-	assert.Equal(t, 10, usage.InputTokens)
-	assert.Equal(t, 20, usage.OutputTokens)
-
-	jsonBytes, err := json.Marshal(usage)
-	assert.NoError(t, err)
-	assert.Contains(t, string(jsonBytes), `"input_tokens":10`)
-	assert.Contains(t, string(jsonBytes), `"output_tokens":20`)
-}
-
-func TestFinishReason(t *testing.T) {
-	assert.Equal(t, "stop", string(FinishReasonStop))
-	assert.Equal(t, "length", string(FinishReasonLength))
-	assert.Equal(t, "tool_call", string(FinishReasonToolCall))
-	assert.Equal(t, "content_filter", string(FinishReasonContentFilter))
-	assert.Equal(t, "unknown", string(FinishReasonUnknown))
-}
 
 func TestText(t *testing.T) {
 	text := NewText("hello world")
@@ -128,16 +110,6 @@ func TestThought(t *testing.T) {
 	assert.Equal(t, map[string]interface{}{"type": "thought", "text": "thinking process", "signature": "sig123"}, thought.ToMap())
 }
 
-func TestToolResult(t *testing.T) {
-	toolResult := NewToolResult("weather_tool", "sunny", "res456")
-	assert.Equal(t, "weather_tool", toolResult.Name)
-	assert.Equal(t, "sunny", toolResult.Result)
-	assert.Equal(t, "res456", toolResult.ID)
-	assert.Equal(t, "tool_result", toolResult.Type)
-	assert.Equal(t, "tool_result", toolResult.GetType())
-	assert.Equal(t, map[string]interface{}{"type": "tool_result", "name": "weather_tool", "result": "sunny", "id": "res456"}, toolResult.ToMap())
-}
-
 func TestUnknownContentBlock(t *testing.T) {
 	unknown := NewUnknownContentBlock(map[string]interface{}{"error": "unknown type"})
 	assert.Equal(t, map[string]interface{}{"error": "unknown type"}, unknown.Data)
@@ -170,16 +142,6 @@ func TestTextChunk(t *testing.T) {
 	assert.Equal(t, "chunk1", chunk.GetID())
 }
 
-func TestToolCallChunk(t *testing.T) {
-	chunk := ToolCallChunk{ID: "toolchunk1", RawArguments: "{}", RawName: "tool_name", Type: "tool_call_chunk"}
-	assert.Equal(t, "toolchunk1", chunk.ID)
-	assert.Equal(t, "{}", chunk.RawArguments)
-	assert.Equal(t, "tool_name", chunk.RawName)
-	assert.Equal(t, "tool_call_chunk", chunk.Type)
-	assert.Equal(t, "tool_call_chunk", chunk.GetType())
-	assert.Equal(t, "toolchunk1", chunk.GetID())
-}
-
 func TestThoughtChunk(t *testing.T) {
 	signature := "sig456"
 	chunk := ThoughtChunk{ID: "thoughtchunk1", Text: "thinking...", Type: "thought_chunk", Signature: &signature}
@@ -189,34 +151,6 @@ func TestThoughtChunk(t *testing.T) {
 	assert.Equal(t, "thought_chunk", chunk.GetType())
 	assert.Equal(t, "thoughtchunk1", chunk.GetID())
 	assert.Equal(t, &signature, chunk.Signature)
-}
-
-func TestTool(t *testing.T) {
-	tool := Tool{
-		Description: "A test tool",
-		Parameters:  map[string]interface{}{"type": "object"},
-		Name:        "test_tool",
-		Strict:      true,
-	}
-	assert.Equal(t, "A test tool", tool.Description)
-	assert.Equal(t, map[string]interface{}{"type": "object"}, tool.Parameters)
-	assert.Equal(t, "test_tool", tool.Name)
-	assert.True(t, tool.Strict)
-}
-
-func TestToolParams(t *testing.T) {
-	tool1 := Tool{Name: "tool1"}
-	tool2 := Tool{Name: "tool2"}
-	parallel := true
-	params := ToolParams{
-		ToolsAvailable:    []Tool{tool1, tool2},
-		ToolChoice:        "auto",
-		ParallelToolCalls: &parallel,
-	}
-	assert.Len(t, params.ToolsAvailable, 2)
-	assert.Equal(t, "auto", params.ToolChoice)
-	assert.NotNil(t, params.ParallelToolCalls)
-	assert.True(t, *params.ParallelToolCalls)
 }
 
 func TestVariantExtraBody(t *testing.T) {

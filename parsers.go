@@ -4,12 +4,14 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/denkhaus/tensorzero/types"
+	"github.com/denkhaus/tensorzero/inference"
+	"github.com/denkhaus/tensorzero/shared"
+	"github.com/denkhaus/tensorzero/tool"
 	"github.com/google/uuid"
 )
 
 // parseInferenceResponse parses an inference response from JSON
-func parseInferenceResponse(data []byte) (types.InferenceResponse, error) {
+func parseInferenceResponse(data []byte) (inference.InferenceResponse, error) {
 	var raw map[string]interface{}
 	if err := json.Unmarshal(data, &raw); err != nil {
 		return nil, fmt.Errorf("failed to unmarshal response: %w", err)
@@ -18,7 +20,7 @@ func parseInferenceResponse(data []byte) (types.InferenceResponse, error) {
 	if content, hasContent := raw["content"]; hasContent {
 		if contentList, ok := content.([]interface{}); ok {
 			// Parse as ChatInferenceResponse but handle content separately
-			var resp types.ChatInferenceResponse
+			var resp inference.ChatInferenceResponse
 
 			// Parse basic fields
 			if inferenceID, ok := raw["inference_id"].(string); ok {
@@ -39,7 +41,7 @@ func parseInferenceResponse(data []byte) (types.InferenceResponse, error) {
 				}
 			}
 			if finishReason, ok := raw["finish_reason"].(string); ok {
-				fr := types.FinishReason(finishReason)
+				fr := inference.FinishReason(finishReason)
 				resp.FinishReason = &fr
 			}
 			if originalResponse, ok := raw["original_response"].(string); ok {
@@ -47,7 +49,7 @@ func parseInferenceResponse(data []byte) (types.InferenceResponse, error) {
 			}
 
 			// Parse content blocks
-			resp.Content = make([]types.ContentBlock, len(contentList))
+			resp.Content = make([]shared.ContentBlock, len(contentList))
 			for i, block := range contentList {
 				if blockMap, ok := block.(map[string]interface{}); ok {
 					contentBlock, err := parseContentBlock(blockMap)
@@ -64,7 +66,7 @@ func parseInferenceResponse(data []byte) (types.InferenceResponse, error) {
 
 	if output, hasOutput := raw["output"]; hasOutput {
 		if _, ok := output.(map[string]interface{}); ok {
-			var resp types.JsonInferenceResponse
+			var resp inference.JsonInferenceResponse
 			if err := json.Unmarshal(data, &resp); err != nil {
 				return nil, fmt.Errorf("failed to unmarshal JSON response: %w", err)
 			}
@@ -76,7 +78,7 @@ func parseInferenceResponse(data []byte) (types.InferenceResponse, error) {
 }
 
 // parseContentBlock parses a content block from a map
-func parseContentBlock(block map[string]interface{}) (types.ContentBlock, error) {
+func parseContentBlock(block map[string]interface{}) (shared.ContentBlock, error) {
 	blockType, ok := block["type"].(string)
 	if !ok {
 		return nil, fmt.Errorf("content block missing type field")
@@ -84,7 +86,7 @@ func parseContentBlock(block map[string]interface{}) (types.ContentBlock, error)
 
 	switch blockType {
 	case "text":
-		text := &types.Text{Type: blockType}
+		text := &shared.Text{Type: blockType}
 		if textVal, ok := block["text"].(string); ok {
 			text.Text = &textVal
 		}
@@ -98,7 +100,7 @@ func parseContentBlock(block map[string]interface{}) (types.ContentBlock, error)
 		if !ok {
 			return nil, fmt.Errorf("raw_text block missing value field")
 		}
-		return types.NewRawText(value), nil
+		return shared.NewRawText(value), nil
 
 	case "image":
 		if data, hasData := block["data"].(string); hasData {
@@ -106,10 +108,10 @@ func parseContentBlock(block map[string]interface{}) (types.ContentBlock, error)
 			if !ok {
 				return nil, fmt.Errorf("image block missing mime_type field")
 			}
-			return types.NewImageBase64(data, mimeType), nil
+			return shared.NewImageBase64(data, mimeType), nil
 		}
 		if url, hasURL := block["url"].(string); hasURL {
-			img := types.NewImageURL(url)
+			img := shared.NewImageURL(url)
 			if mimeType, ok := block["mime_type"].(string); ok {
 				img.MimeType = &mimeType
 			}
@@ -123,10 +125,10 @@ func parseContentBlock(block map[string]interface{}) (types.ContentBlock, error)
 			if !ok {
 				return nil, fmt.Errorf("file block missing mime_type field")
 			}
-			return types.NewFileBase64(data, mimeType), nil
+			return shared.NewFileBase64(data, mimeType), nil
 		}
 		if url, hasURL := block["url"].(string); hasURL {
-			return types.NewFileURL(url), nil
+			return shared.NewFileURL(url), nil
 		}
 		return nil, fmt.Errorf("file block missing data or url field")
 
@@ -144,7 +146,7 @@ func parseContentBlock(block map[string]interface{}) (types.ContentBlock, error)
 			return nil, fmt.Errorf("tool_call block missing raw_name field")
 		}
 
-		toolCall := types.NewToolCall(id, rawArgs, rawName)
+		toolCall := shared.NewToolCall(id, rawArgs, rawName)
 		if args, ok := block["arguments"].(map[string]interface{}); ok {
 			toolCall.Arguments = args
 		}
@@ -154,7 +156,7 @@ func parseContentBlock(block map[string]interface{}) (types.ContentBlock, error)
 		return toolCall, nil
 
 	case "thought":
-		thought := types.NewThought("")
+		thought := shared.NewThought("")
 		if text, ok := block["text"].(string); ok {
 			thought.Text = &text
 		}
@@ -176,14 +178,14 @@ func parseContentBlock(block map[string]interface{}) (types.ContentBlock, error)
 		if !ok {
 			return nil, fmt.Errorf("tool_result block missing id field")
 		}
-		return types.NewToolResult(name, result, id), nil
+		return tool.NewToolResult(name, result, id), nil
 
 	case "unknown":
 		data, ok := block["data"]
 		if !ok {
 			return nil, fmt.Errorf("unknown block missing data field")
 		}
-		unknown := types.NewUnknownContentBlock(data)
+		unknown := shared.NewUnknownContentBlock(data)
 		if provider, ok := block["model_provider_name"].(string); ok {
 			unknown.ModelProviderName = &provider
 		}
@@ -195,7 +197,7 @@ func parseContentBlock(block map[string]interface{}) (types.ContentBlock, error)
 }
 
 // parseInferenceChunk parses an inference chunk from JSON
-func parseInferenceChunk(data []byte) (types.InferenceChunk, error) {
+func parseInferenceChunk(data []byte) (inference.InferenceChunk, error) {
 	var raw map[string]interface{}
 	if err := json.Unmarshal(data, &raw); err != nil {
 		return nil, fmt.Errorf("failed to unmarshal chunk: %w", err)
@@ -204,7 +206,7 @@ func parseInferenceChunk(data []byte) (types.InferenceChunk, error) {
 	if content, hasContent := raw["content"]; hasContent {
 		if contentList, ok := content.([]interface{}); ok {
 			// Parse as ChatChunk but handle content separately
-			var chunk types.ChatChunk
+			var chunk inference.ChatChunk
 
 			// Parse basic fields
 			if inferenceID, ok := raw["inference_id"].(string); ok {
@@ -217,7 +219,7 @@ func parseInferenceChunk(data []byte) (types.InferenceChunk, error) {
 				chunk.VariantName = variantName
 			}
 			if usage, ok := raw["usage"].(map[string]interface{}); ok {
-				chunk.Usage = &types.Usage{}
+				chunk.Usage = &shared.Usage{}
 				if inputTokens, ok := usage["input_tokens"].(float64); ok {
 					chunk.Usage.InputTokens = int(inputTokens)
 				}
@@ -226,12 +228,12 @@ func parseInferenceChunk(data []byte) (types.InferenceChunk, error) {
 				}
 			}
 			if finishReason, ok := raw["finish_reason"].(string); ok {
-				fr := types.FinishReason(finishReason)
+				fr := inference.FinishReason(finishReason)
 				chunk.FinishReason = &fr
 			}
 
 			// Parse content block chunks
-			chunk.Content = make([]types.ContentBlockChunk, len(contentList))
+			chunk.Content = make([]inference.ContentBlockChunk, len(contentList))
 			for i, block := range contentList {
 				if blockMap, ok := block.(map[string]interface{}); ok {
 					contentChunk, err := parseContentBlockChunk(blockMap)
@@ -247,7 +249,7 @@ func parseInferenceChunk(data []byte) (types.InferenceChunk, error) {
 	}
 
 	if _, hasRaw := raw["raw"]; hasRaw {
-		var chunk types.JsonChunk
+		var chunk inference.JsonChunk
 		if err := json.Unmarshal(data, &chunk); err != nil {
 			return nil, fmt.Errorf("failed to unmarshal JSON chunk: %w", err)
 		}
@@ -258,7 +260,7 @@ func parseInferenceChunk(data []byte) (types.InferenceChunk, error) {
 }
 
 // parseContentBlockChunk parses a content block chunk from a map
-func parseContentBlockChunk(block map[string]interface{}) (types.ContentBlockChunk, error) {
+func parseContentBlockChunk(block map[string]interface{}) (inference.ContentBlockChunk, error) {
 	blockType, ok := block["type"].(string)
 	if !ok {
 		return nil, fmt.Errorf("content block chunk missing type field")
@@ -275,7 +277,7 @@ func parseContentBlockChunk(block map[string]interface{}) (types.ContentBlockChu
 		if !ok {
 			return nil, fmt.Errorf("text chunk missing text field")
 		}
-		return &types.TextChunk{
+		return &shared.TextChunk{
 			ID:   id,
 			Text: text,
 			Type: blockType,
@@ -290,7 +292,7 @@ func parseContentBlockChunk(block map[string]interface{}) (types.ContentBlockChu
 		if !ok {
 			return nil, fmt.Errorf("tool_call chunk missing raw_name field")
 		}
-		return &types.ToolCallChunk{
+		return &tool.ToolCallChunk{
 			ID:           id,
 			RawArguments: rawArgs,
 			RawName:      rawName,
@@ -302,7 +304,7 @@ func parseContentBlockChunk(block map[string]interface{}) (types.ContentBlockChu
 		if !ok {
 			return nil, fmt.Errorf("thought chunk missing text field")
 		}
-		chunk := &types.ThoughtChunk{
+		chunk := &shared.ThoughtChunk{
 			ID:   id,
 			Text: text,
 			Type: blockType,
