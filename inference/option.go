@@ -1,6 +1,7 @@
 package inference
 
 import (
+	"github.com/denkhaus/tensorzero/shared"
 	"github.com/denkhaus/tensorzero/tool"
 	"github.com/denkhaus/tensorzero/util"
 	"github.com/google/uuid"
@@ -141,4 +142,48 @@ func WithIncludeOriginalResponse(includeOriginalResponse bool) InferenceRequestO
 	return func(g *InferenceRequest) {
 		g.IncludeOriginalResponse = util.BoolPtr(includeOriginalResponse)
 	}
+}
+
+// WithUserMessage creates a user message with the provided text content
+func WithUserMessage(prompt string) InferenceRequestOption {
+	return func(req *InferenceRequest) {
+		req.Input = InferenceInput{
+			Messages: []shared.Message{
+				{
+					Role: "user",
+					Content: []shared.ContentBlock{
+						shared.NewText(prompt),
+					},
+				},
+			},
+		}
+	}
+}
+
+// WithSystemMessage adds a system message to the request
+func WithSystemMessage(content string) InferenceRequestOption {
+    return func(req *InferenceRequest) {
+        systemMessage := shared.Message{
+            Role: "system",
+            Content: []shared.ContentBlock{
+                shared.NewText(content),
+            },
+        }
+        
+        // Prepend system message to existing messages
+        if req.Input.Messages == nil {
+            req.Input.Messages = []shared.Message{systemMessage}
+        } else {
+            req.Input.Messages = append([]shared.Message{systemMessage}, req.Input.Messages...)
+        }
+    }
+}
+
+// WithMessages sets custom messages for the inference request
+func WithMessages(messages []shared.Message) InferenceRequestOption {
+    return func(req *InferenceRequest) {
+        req.Input = InferenceInput{
+            Messages: messages,
+        }
+    }
 }

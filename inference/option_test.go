@@ -151,3 +151,55 @@ func TestWithIncludeOriginalResponse(t *testing.T) {
 	assert.NotNil(t, req.IncludeOriginalResponse)
 	assert.True(t, *req.IncludeOriginalResponse)
 }
+
+func TestWithUserMessage(t *testing.T) {
+	req := &InferenceRequest{}
+	prompt := "Hello, world!"
+	WithUserMessage(prompt)(req)
+	assert.NotNil(t, req.Input)
+	assert.Len(t, req.Input.Messages, 1)
+	assert.Equal(t, "user", req.Input.Messages[0].Role)
+	assert.Len(t, req.Input.Messages[0].Content, 1)
+	assert.Equal(t, "text", req.Input.Messages[0].Content[0].Type)
+	assert.Equal(t, prompt, req.Input.Messages[0].Content[0].Text)
+}
+
+func TestWithSystemMessage(t *testing.T) {
+	req := &InferenceRequest{}
+	content := "You are a helpful assistant."
+	WithSystemMessage(content)(req)
+	assert.NotNil(t, req.Input)
+	assert.Len(t, req.Input.Messages, 1)
+	assert.Equal(t, "system", req.Input.Messages[0].Role)
+	assert.Len(t, req.Input.Messages[0].Content, 1)
+	assert.Equal(t, "text", req.Input.Messages[0].Content[0].Type)
+	assert.Equal(t, content, req.Input.Messages[0].Content[0].Text)
+
+	// Test prepending to existing messages
+	WithUserMessage("Hello!")(req)
+	WithSystemMessage(content)(req)
+	assert.Len(t, req.Input.Messages, 2)
+	assert.Equal(t, "system", req.Input.Messages[0].Role)
+	assert.Equal(t, "user", req.Input.Messages[1].Role)
+}
+
+func TestWithMessages(t *testing.T) {
+	req := &InferenceRequest{}
+	messages := []shared.Message{
+		{
+			Role: "user",
+			Content: []shared.ContentBlock{
+				shared.NewText("Hello!"),
+			},
+		},
+		{
+			Role: "assistant",
+			Content: []shared.ContentBlock{
+				shared.NewText("Hi there!"),
+			},
+		},
+	}
+	WithMessages(messages)(req)
+	assert.NotNil(t, req.Input)
+	assert.Equal(t, messages, req.Input.Messages)
+}

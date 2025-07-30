@@ -41,3 +41,26 @@ func WithEpisodeID(episodeID uuid.UUID) FeedbackRequestOption {
 		g.EpisodeID = &episodeID
 	}
 }
+
+// WithMetricValue sets both metric name and value in a single option
+func WithMetricValue(metricName string, value interface{}) FeedbackRequestOption {
+    return func(req *Request) {
+        req.MetricName = metricName
+        req.Value = value
+    }
+}
+
+// WithComment is a convenience method for comment feedback
+func WithComment(comment string) FeedbackRequestOption {
+    return WithMetricValue("comment", comment)
+}
+
+// WithRating is a convenience method for rating feedback
+func WithRating(rating float64) FeedbackRequestOption {
+    return WithMetricValue("rating", rating)
+}
+
+// WithBooleanMetric is a convenience method for boolean feedback
+func WithBooleanMetric(metricName string, value bool) FeedbackRequestOption {
+    return WithMetricValue(metricName, value)
+}
